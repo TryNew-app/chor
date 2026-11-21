@@ -12,10 +12,10 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Chorverwaltung</title>
 <style>
-:root{--bg:#f4f1ee;--card:#fff;--fg:#1d1b1a;--mute:#76706b;--acc:#7a2e3a;--line:#e3ddd8;--on:#2f7d4f;--danger:#c0392b;--hl:#fff0cf;--hlb:#e0a030}
-@media(prefers-color-scheme:dark){:root{--bg:#161413;--card:#232020;--fg:#f1ece8;--mute:#a39b95;--acc:#c9586a;--line:#38332f;--on:#3a9a62;--danger:#e5675a;--hl:#4a3a18;--hlb:#d9a441}}
+:root{--bg:#f4f1ee;--card:#fff;--fg:#1d1b1a;--mute:#76706b;--acc:#7a2e3a;--line:#e3ddd8;--on:#2f7d4f;--danger:#c0392b;--hl:#fff0cf;--hlb:#e0a030;--g1:#ffe49a;--g2:#e4e8ee;--g3:#f4d3b4}
+@media(prefers-color-scheme:dark){:root{--bg:#161413;--card:#232020;--fg:#f1ece8;--mute:#a39b95;--acc:#c9586a;--line:#38332f;--on:#3a9a62;--danger:#e5675a;--hl:#4a3a18;--hlb:#d9a441;--g1:#5c4a14;--g2:#3d424a;--g3:#583c25}}
 *{box-sizing:border-box}
-body{margin:0;font:17px/1.4 -apple-system,system-ui,sans-serif;background:var(--bg);color:var(--fg);padding-bottom:calc(84px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%}
+body{margin:0;font:17px/1.4 -apple-system,system-ui,sans-serif;background:var(--bg);color:var(--fg);padding-bottom:calc(92px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%}
 #app{max-width:900px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) 16px 16px}
 h1{font-size:28px;margin:6px 0}
 h2{font-size:19px;margin:0}
@@ -26,41 +26,64 @@ h2{font-size:19px;margin:0}
 .card.hl{background:var(--hl);border:2px solid var(--hlb)}
 input,select{font:inherit;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px}
 input[type=text],input:not([type]){width:100%}
-label{display:block}
-label select,label input{width:100%}
+input[type=date]{min-width:0;max-width:100%}
+textarea{font:inherit;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;margin-top:10px}
+input[type=time]{min-width:130px}
 .btn{font:inherit;background:var(--acc);color:#fff;border:0;border-radius:12px;padding:11px 18px;min-height:44px}
 .btn.sec{background:transparent;color:var(--acc);border:1.5px solid var(--acc)}
 .btn.danger{background:transparent;color:var(--danger);border:1.5px solid var(--danger)}
 .btn.small{padding:6px 12px;min-height:36px;font-size:15px}
 .btn.wide{width:100%;margin:10px 0}
-nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:10}
-nav button{flex:1;background:none;border:0;font:inherit;font-size:11px;color:var(--mute);padding:10px 1px;display:flex;flex-direction:column;align-items:center;gap:2px}
-nav button span{font-size:22px}
-nav button.on{color:var(--acc);font-weight:600}
+.btn:disabled{opacity:.35}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;gap:4px;background:var(--card);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:10}
+nav button{flex:1;min-width:0;position:relative;background:none;border:0;border-radius:12px;font:inherit;font-size:11px;color:var(--mute);padding:6px 1px;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button span{font-size:22px;line-height:1.2}
+nav button.on{background:var(--acc);color:#fff;font-weight:600}
+.dot{display:none;position:absolute;top:1px;left:calc(50% + 9px);width:13px;height:13px;border-radius:50%;background:#ff3b30;border:2px solid #fff}
+.dot.on{display:block}
+.dotin{display:inline-block;width:11px;height:11px;border-radius:50%;background:#ff3b30;margin-right:6px}
 .ev{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:inherit;background:var(--card);border:0;border-radius:14px;padding:14px 16px;margin:8px 0;min-height:64px}
+.ev .box{width:28px;height:28px;flex:none;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center;color:transparent;font-size:18px}
+.ev.on .box{background:var(--on);border-color:var(--on);color:#fff}
 .badge{display:inline-block;font-size:13px;padding:2px 10px;border-radius:99px;background:var(--bg);color:var(--mute);border:1px solid var(--line)}
 .badge.konzert{background:var(--acc);color:#fff;border-color:var(--acc)}
 .badge.gottesdienst{background:#2f5d8a;color:#fff;border-color:#2f5d8a}
-.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:8px 0 16px}
-.chip{font:inherit;padding:14px 10px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--fg);text-align:left;min-height:54px}
-.chip.on{background:var(--on);border-color:var(--on);color:#fff;font-weight:600}
-.sticky{position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 0}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:8px 0 16px}
+.chip{display:flex;align-items:center;gap:6px;font:inherit;font-size:16px;font-weight:500;padding:0 10px;height:54px;min-width:0;overflow:hidden;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--fg);text-align:left}
+.chip .ck{width:1.1em;flex:none;visibility:hidden}
+.chip .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip.on{background:var(--on);border-color:var(--on);color:#fff}
+.chip.on .ck{visibility:visible}
 .count b{font-size:30px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .grid .card{margin:0}
 .big{font-size:34px;font-weight:700}
 table{width:100%;border-collapse:collapse}
-td{padding:8px 4px;border-bottom:1px solid var(--line)}
+td{padding:8px 6px;border-bottom:1px solid var(--line)}
 td:last-child,td:nth-child(3){text-align:right}
+tr.r1 td{background:var(--g1)}
+tr.r2 td{background:var(--g2)}
+tr.r3 td{background:var(--g3)}
+tr.r1 td:first-child,tr.r2 td:first-child,tr.r3 td:first-child{border-radius:8px 0 0 8px}
+tr.r1 td:last-child,tr.r2 td:last-child,tr.r3 td:last-child{border-radius:0 8px 8px 0}
 .piece{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .piece span{flex:1}
+.piece b{min-width:28px}
 .warn{border:1.5px solid var(--danger)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
 .flag{font-weight:600;margin-top:4px}
-textarea{font:inherit;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;margin-top:10px}
-input[type=time]{min-width:130px}
-.btn:disabled{opacity:.35}
-.piece b{min-width:28px}
+.fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
+.fgrid>label,.fgrid>div{display:block;min-width:0;font-size:15px;color:var(--mute)}
+.fgrid input,.fgrid select{display:block;width:100%;min-width:0;max-width:100%;margin-top:4px}
+.dwrap{display:flex;gap:8px;align-items:center;margin-top:4px}
+.dwrap input{margin-top:0;flex:1}
+.fgrid .hint{align-self:end;padding-bottom:12px}
+@media(max-width:480px){.fgrid{grid-template-columns:minmax(0,1fr)}}
+.fm{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(0,1fr)) minmax(0,1.3fr) auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.fm.hd{color:var(--mute);font-size:13px;padding-top:0}
+.fm .lb{display:none;color:var(--mute)}
+.fm .act{display:flex;gap:6px;justify-content:flex-end}
+@media(max-width:760px){.fm{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.fm.hd{display:none}.fm .nm{grid-column:1/-1;font-size:17px}.fm .lb{display:inline}.fm .act{grid-column:1/-1;justify-content:flex-start}}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:50;overflow:auto;padding:max(16px,env(safe-area-inset-top)) 16px 24px}
 .sheet{max-width:560px;margin:0 auto;background:var(--card);border-radius:16px;padding:14px}
 .sheet img{width:100%;display:block;border-radius:10px}
@@ -70,34 +93,49 @@ input[type=time]{min-width:130px}
 <div id="app"></div>
 <nav>
   <button data-t="termine"><span>📅</span>Termine</button>
+  <button data-t="statistik"><span>📊</span>Statistik</button>
   <button data-t="auftritte"><span>🎤</span>Auftritte</button>
   <button data-t="mitglieder"><span>👥</span>Mitglieder</button>
-  <button data-t="jubilaeen"><span>🎂</span>Jubiläen</button>
-  <button data-t="statistik"><span>📊</span>Statistik</button>
+  <button data-t="jubilaeen"><span>🎂</span>Jubiläen<i class="dot"></i></button>
   <button data-t="sicherung"><span>💾</span>Sicherung</button>
 </nav>
 <script>
 const KEY='chor-data-v1';
 const VOICES=['Sopran','Alt','Tenor','Bass'];
 const TYPES={probe:'Probe',konzert:'Konzert',gottesdienst:'Gottesdienst'};
-const PLURAL={probe:'Proben',konzert:'Konzerte',gottesdienst:'Gottesdienste'};
 const SOON=30; // so viele Tage vorher wird ein runder Geburtstag hervorgehoben
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
-const byName=(a,b)=>a.name.localeCompare(b.name,'de');
 const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
 const f1=n=>n.toLocaleString('de-DE',{maximumFractionDigits:1});
 const pct=n=>Math.round(n*100)+' %';
 
-function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&Array.isArray(d.members)&&Array.isArray(d.events)){d.gigs=(Array.isArray(d.gigs)?d.gigs:[]).map(g=>({title:'',location:'',note:'',times:[],pieces:[],...g}));return d}}catch(e){}return{members:[],events:[],gigs:[]}}
+/* ---------- Namen: Vorname und Nachname ---------- */
+const dn=m=>m.last&&m.first?m.last+', '+m.first:(m.last||m.first||'(ohne Namen)');
+const byName=(a,b)=>(a.last||'').localeCompare(b.last||'','de')||(a.first||'').localeCompare(b.first||'','de');
+function normMember(m){
+  let first=m.first,last=m.last;
+  if(first===undefined&&last===undefined){ // ältere Daten: ein Namensfeld -> letztes Wort = Nachname
+    const p=String(m.name||'').trim().split(/\s+/).filter(Boolean);
+    last=p.length?p.pop():'';first=p.join(' ');
+  }
+  m.first=first||'';m.last=last||'';m.left=m.left||'';
+  m.name=(m.first+' '+m.last).trim();
+  return m;
+}
+const normGig=g=>({title:'',location:'',note:'',times:[],pieces:[],...g});
+
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&Array.isArray(d.members)&&Array.isArray(d.events)){d.members.forEach(normMember);d.gigs=(Array.isArray(d.gigs)?d.gigs:[]).map(normGig);return d}}catch(e){}return{members:[],events:[],gigs:[]}}
 let db=load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert('Speichern ist fehlgeschlagen. Bitte mache eine Sicherung.')}}
-let ui={tab:'termine',year:new Date().getFullYear(),eventId:null,showNew:false,editMember:null,gigId:null,showNewGig:false,shareImg:null,lastVoice:'Sopran',focus:null};
+let ui={tab:'termine',year:new Date().getFullYear(),eventId:null,showNew:false,editMember:null,gigId:null,showNewGig:false,listMode:false,listSel:[],listPieces:false,listTitle:'Nächste Auftritte',shareImg:null,lastVoice:'Sopran',focus:null};
 
-const activeMembers=()=>db.members.filter(m=>m.active!==false);
+const isFormer=m=>!!m.left&&m.left<=today();
+const inChoir=(m,d)=>(!m.joined||m.joined<=d)&&(!m.left||d<=m.left);
+const activeMembers=()=>db.members.filter(m=>m.active!==false&&!isFormer(m));
 const getEvent=()=>db.events.find(e=>e.id===ui.eventId);
 const getGig=()=>db.gigs.find(g=>g.id===ui.gigId);
 const presentCount=e=>e.present.filter(id=>db.members.some(m=>m.id===id)).length;
@@ -106,12 +144,13 @@ function years(){const s=new Set([new Date().getFullYear()]);db.events.forEach(e
 const yearSelect=()=>`<select data-c="year" aria-label="Jahr">${years().map(v=>`<option ${v==ui.year?'selected':''}>${v}</option>`).join('')}</select>`;
 const typeOptions=sel=>Object.entries(TYPES).map(([k,l])=>`<option value="${k}" ${k===sel?'selected':''}>${l}</option>`).join('');
 
-/* ---------- Datums-Helfer für Jubiläen ---------- */
+/* ---------- Datums-Helfer ---------- */
 const startOfToday=()=>{const d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate())};
 const pd=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
 const fmtD=s=>pd(s).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
 const fmtDM=d=>d.toLocaleDateString('de-DE',{day:'numeric',month:'long'});
 const dayText=d=>d===0?'heute':d===1?'morgen':`in ${d} Tagen`;
+const agoText=d=>d===0?'heute':d===1?'gestern':`vor ${d} Tagen`;
 function span(from,to){ // volle Jahre und Monate zwischen zwei Daten
   let months=(to.getFullYear()-from.getFullYear())*12+to.getMonth()-from.getMonth();
   if(to.getDate()<from.getDate())months--;
@@ -124,6 +163,17 @@ function nextOcc(s,t){ // nächster Jahrestag ab heute
   if(n<t)n=new Date(t.getFullYear()+1,b.getMonth(),b.getDate());
   return{date:n,n:n.getFullYear()-b.getFullYear(),days:Math.round((n-t)/864e5)};
 }
+function lastOcc(s,t){ // letzter Jahrestag bis heute
+  const b=pd(s);
+  let n=new Date(t.getFullYear(),b.getMonth(),b.getDate());
+  if(n>t)n=new Date(t.getFullYear()-1,b.getMonth(),b.getDate());
+  return{date:n,n:n.getFullYear()-b.getFullYear(),days:Math.round((t-n)/864e5)};
+}
+function recentBirthdays(){ // Geburtstage heute und in den letzten 7 Tagen
+  const t=startOfToday();
+  return db.members.filter(m=>!isFormer(m)&&m.birth).map(m=>({m,...lastOcc(m.birth,t)})).filter(x=>x.days<=7).sort((a,b)=>a.days-b.days||byName(a.m,b.m));
+}
+const spanText=s=>s.y===0?`${s.m} Monate`:`${s.y} Jahre${s.m?`, ${s.m} Monat${s.m>1?'e':''}`:''}`;
 
 /* ---------- Termine ---------- */
 function viewTermine(){
@@ -146,6 +196,7 @@ function viewTermine(){
   return h;
 }
 
+const eligibleFor=(e,v)=>db.members.filter(m=>m.voice===v&&((m.active!==false&&inChoir(m,e.date))||e.present.includes(m.id))).sort(byName);
 function viewEvent(){
   const e=getEvent();if(!e){ui.eventId=null;return viewTermine()}
   const pres=new Set(e.present);
@@ -153,12 +204,12 @@ function viewEvent(){
   let h=`<button class="btn sec small" data-a="back">‹ Zurück</button>
   <div class="card"><div class="row" style="margin-bottom:10px"><select data-c="evtype">${typeOptions(e.type)}</select><input type="date" data-c="evdate" value="${e.date}"></div>
   <input data-c="evtitle" placeholder="Titel oder Ort (optional)" value="${esc(e.title)}" autocomplete="off"></div>
-  <div class="sticky"><div class="card count" style="margin:0"><b>${presentCount(e)}</b> anwesend<div class="muted">${VOICES.map(v=>v+' '+presentOfVoice(e,v)).join(' · ')}</div></div></div>`;
+  <div class="card count"><b>${presentCount(e)}</b> anwesend<div class="muted">${VOICES.map(v=>v+' '+presentOfVoice(e,v)).join(' · ')}</div></div>`;
   for(const v of VOICES){
-    const ms=db.members.filter(m=>m.voice===v&&(m.active!==false||pres.has(m.id))).sort(byName);
+    const ms=eligibleFor(e,v);
     h+=`<div class="row" style="margin-top:14px"><h2 class="sp">${v} <span class="muted">${presentOfVoice(e,v)}/${ms.length}</span></h2>
       <button class="btn sec small" data-a="all" data-v="${v}">alle</button><button class="btn sec small" data-a="none" data-v="${v}">keine</button></div>`;
-    h+=ms.length?`<div class="chips">${ms.map(m=>`<button class="chip ${pres.has(m.id)?'on':''}" data-a="toggle" data-id="${m.id}">${pres.has(m.id)?'✓ ':''}${esc(m.name)}</button>`).join('')}</div>`:`<div class="muted" style="margin:6px 0 12px">Keine Mitglieder in dieser Stimme.</div>`;
+    h+=ms.length?`<div class="chips">${ms.map(m=>`<button class="chip ${pres.has(m.id)?'on':''}" data-a="toggle" data-id="${m.id}"><span class="ck">✓</span><span class="t">${esc(dn(m))}</span></button>`).join('')}</div>`:`<div class="muted" style="margin:6px 0 12px">Keine Mitglieder in dieser Stimme.</div>`;
   }
   h+=`<div class="card"><h2>${e.type==='probe'?'Geprobte Stücke':'Gesungene Stücke'}</h2>
     ${e.pieces.map((p,i)=>`<div class="piece"><span>${esc(p)}</span><button class="btn danger small" data-a="delpiece" data-i="${i}">✕</button></div>`).join('')}
@@ -167,12 +218,27 @@ function viewEvent(){
   return h;
 }
 
+/* Schrift in den Namensfeldern verkleinern, bis der Name hineinpasst (das Feld bleibt gleich groß) */
+function fitChips(){
+  document.querySelectorAll('.chip .t').forEach(el=>{
+    el.style.whiteSpace='nowrap';el.style.lineHeight='';el.style.maxHeight='';
+    let s=16;el.style.fontSize=s+'px';
+    while(el.scrollWidth>el.clientWidth&&s>11){s-=0.5;el.style.fontSize=s+'px'}
+    if(el.scrollWidth>el.clientWidth){ // sehr langer Name: zwei kleine Zeilen im selben Feld
+      el.style.whiteSpace='normal';el.style.lineHeight='1.15';el.style.maxHeight='44px';
+      s=14;el.style.fontSize=s+'px';
+      while((el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1)&&s>8){s-=0.5;el.style.fontSize=s+'px'}
+    }
+  });
+}
+
 /* ---------- Auftritte ---------- */
 const GTYPES={gottesdienst:'Gottesdienst',konzert:'Konzert',sonstiges:'Sonstiges'};
 const fmtTime=t=>{if(!t)return'';const [h,m]=t.split(':');return (+h)+':'+m+' Uhr'};
 const longDate=d=>new Date(d+'T12:00:00').toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 const timeLine=t=>[t.label,fmtTime(t.time)].filter(Boolean).join(' ');
 const gigTitle=g=>g.title||GTYPES[g.type]||'Auftritt';
+const listGigs=()=>db.gigs.filter(g=>ui.listSel.includes(g.id)).sort((a,b)=>a.date.localeCompare(b.date));
 
 function gigCard(g){
   return `<button class="ev" data-a="opengig" data-id="${g.id}">
@@ -180,6 +246,7 @@ function gigCard(g){
     <span class="badge ${g.type}">${GTYPES[g.type]||'Sonstiges'}</span></button>`;
 }
 function viewGigs(){
+  if(ui.listMode)return viewGigList();
   const t=today();
   const up=db.gigs.filter(g=>g.date>=t).sort((a,b)=>a.date.localeCompare(b.date));
   const past=db.gigs.filter(g=>g.date<t).sort((a,b)=>b.date.localeCompare(a.date));
@@ -189,18 +256,34 @@ function viewGigs(){
       <div class="row" style="margin:10px 0"><select id="gType">${Object.entries(GTYPES).map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select><input type="date" id="gDate" value="${today()}"></div>
       <input id="gTitle" placeholder="Titel (z. B. Adventskonzert)" autocomplete="off">
       <div class="row" style="margin-top:12px"><button class="btn" data-a="creategig">Anlegen</button><button class="btn sec" data-a="cancelnewgig">Abbrechen</button></div></div>`;
-  }else h+=`<button class="btn wide" data-a="newgig">+ Neuer Auftritt</button>`;
+  }else h+=`<div class="row" style="margin:12px 0"><button class="btn sp" data-a="newgig">+ Neuer Auftritt</button>${db.gigs.length?'<button class="btn sec" data-a="listmode">Liste teilen</button>':''}</div>`;
   if(!db.gigs.length)h+=`<div class="muted" style="margin-top:16px">Noch keine Auftritte angelegt.</div>`;
   if(up.length)h+=`<h2 style="margin-top:18px">Anstehend</h2>`+up.map(gigCard).join('');
   if(past.length)h+=`<h2 style="margin-top:18px">Vergangen</h2>`+past.map(gigCard).join('');
   return h;
+}
+function viewGigList(){
+  const t=today();
+  const all=[...db.gigs].sort((a,b)=>a.date.localeCompare(b.date));
+  const up=all.filter(g=>g.date>=t),past=all.filter(g=>g.date<t).reverse();
+  const row=g=>`<button class="ev ${ui.listSel.includes(g.id)?'on':''}" data-a="tgllist" data-id="${g.id}"><span class="box">✓</span>
+    <div class="sp"><div><b>${esc(gigTitle(g))}</b></div><div class="muted">${fmt(g.date)}${g.location?' · '+esc(g.location):''}</div></div></button>`;
+  const n=ui.listSel.length;
+  return `<button class="btn sec small" data-a="backlist">‹ Zurück</button>
+  <h1 style="margin-top:12px">Liste teilen</h1><div class="muted">Wähle die Auftritte aus, die in der Liste stehen sollen.</div>
+  <div class="card"><div class="muted">Überschrift</div><input data-c="ltitle" value="${esc(ui.listTitle)}" autocomplete="off" style="margin-top:6px">
+    <div class="chips" style="margin:12px 0 0"><button class="chip ${ui.listPieces?'on':''}" data-a="tglpieces"><span class="ck">✓</span><span class="t">Stücke mit anzeigen</span></button></div></div>
+  ${up.length?`<h2 style="margin-top:16px">Anstehend</h2>`+up.map(row).join(''):''}
+  ${past.length?`<h2 style="margin-top:16px">Vergangen</h2>`+past.map(row).join(''):''}
+  <div class="card"><div class="muted" style="margin-bottom:10px">${n} Auftritt${n===1?'':'e'} ausgewählt</div>
+    <div class="row"><button class="btn" data-a="listimg" ${n?'':'disabled'}>Als Bild</button><button class="btn sec" data-a="listtxt" ${n?'':'disabled'}>Als Text</button></div></div>`;
 }
 function viewGig(){
   const g=getGig();if(!g){ui.gigId=null;return viewGigs()}
   const allP=[...new Set([...db.gigs.flatMap(x=>x.pieces||[]),...db.events.flatMap(x=>x.pieces||[])])].sort((a,b)=>a.localeCompare(b,'de'));
   const LABELS=['Einsingen','Treffpunkt','Generalprobe','Einlass','Beginn','Gottesdienst','Konzert'];
   return `<button class="btn sec small" data-a="backgig">‹ Zurück</button>
-  <div class="card">
+  <div class="card" style="margin-top:12px">
     <div class="row" style="margin-bottom:10px"><select data-c="gtype">${Object.entries(GTYPES).map(([k,l])=>`<option value="${k}" ${k===g.type?'selected':''}>${l}</option>`).join('')}</select><input type="date" data-c="gdate" value="${g.date}"></div>
     <input data-c="gtitle" placeholder="Titel" value="${esc(g.title)}" autocomplete="off">
   </div>
@@ -233,8 +316,9 @@ function applyGigField(el){
 }
 
 /* Bild für WhatsApp: wird auf einer Zeichenfläche gemalt, braucht kein Internet */
+const FONT='-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif';
 function gigCanvas(g){
-  const W=1080,P=72,CW=W-2*P,F='-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif';
+  const W=1080,P=72,CW=W-2*P,F=FONT;
   const c=document.createElement('canvas');c.width=W;c.height=300;
   const ctx=c.getContext('2d');
   const set=(sz,wt)=>{ctx.font=(wt||400)+' '+sz+'px '+F;ctx.textBaseline='top'};
@@ -293,6 +377,58 @@ function gigCanvas(g){
   run(true);
   return c;
 }
+/* Mehrere Auftritte als Liste in einem Bild */
+function gigListCanvas(gigs,opt){
+  const W=1080,P=64,IN=30,CW=W-2*P-IN,F=FONT;
+  const c=document.createElement('canvas');c.width=W;c.height=300;
+  const ctx=c.getContext('2d');
+  const set=(sz,wt)=>{ctx.font=(wt||400)+' '+sz+'px '+F;ctx.textBaseline='top'};
+  const wrap=(t,w)=>{
+    const out=[];
+    String(t).split('\n').forEach(par=>{
+      const words=par.split(/\s+/).filter(Boolean);
+      if(!words.length){out.push('');return}
+      let line='';
+      words.forEach(wd=>{const tst=line?line+' '+wd:wd;if(ctx.measureText(tst).width>w&&line){out.push(line);line=wd}else line=tst});
+      out.push(line);
+    });
+    return out;
+  };
+  const items=gigs.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const head=(opt&&opt.title)||'Auftritte';
+  const sub=items.length>1?fmtD(items[0].date)+' – '+fmtD(items[items.length-1].date):(items[0]?fmtD(items[0].date):'');
+  function run(draw){
+    const txt=(s,x,y,col)=>{if(draw){ctx.fillStyle=col;ctx.fillText(s,x,y)}};
+    set(60,700);const tl=wrap(head,W-2*P);
+    const headH=P+tl.length*72+8+44+Math.round(P*.6);
+    if(draw){ctx.fillStyle='#faf6f1';ctx.fillRect(0,0,W,c.height);ctx.fillStyle='#7a2e3a';ctx.fillRect(0,0,W,headH)}
+    let y=P;
+    set(60,700);tl.forEach((l,i)=>txt(l,P,y+i*72,'#ffffff'));y+=tl.length*72+8;
+    set(34,400);txt(sub,P,y,'#f3e3cf');
+    y=headH+44;
+    items.forEach((g,idx)=>{
+      const y0=y;const x=P+IN;
+      set(32,700);wrap(longDate(g.date),CW).forEach(l=>{txt(l,x,y,'#7a2e3a');y+=42});
+      set(44,700);wrap(gigTitle(g),CW).forEach(l=>{txt(l,x,y,'#1d1b1a');y+=56});
+      const times=(g.times||[]).filter(t=>t.time||t.label);
+      set(34,400);
+      if(times.length)wrap(times.map(t=>[fmtTime(t.time),t.label].filter(Boolean).join(' ')).join('   ·   '),CW).forEach(l=>{txt(l,x,y,'#1d1b1a');y+=46});
+      if(g.location){set(34,400);wrap('Ort: '+g.location,CW).forEach(l=>{txt(l,x,y,'#1d1b1a');y+=46})}
+      if(opt&&opt.pieces&&(g.pieces||[]).length){
+        set(32,400);
+        wrap('Stücke: '+g.pieces.map((p,i)=>(i+1)+'. '+p).join('  ·  '),CW).forEach(l=>{txt(l,x,y,'#555555');y+=42});
+      }
+      if(draw){ctx.fillStyle='#7a2e3a';ctx.fillRect(P,y0+4,8,Math.max(10,y-y0-10))}
+      y+=26;
+      if(idx<items.length-1){if(draw){ctx.fillStyle='#e3ddd8';ctx.fillRect(P,y,W-2*P,2)}y+=34}
+    });
+    return y+Math.round(P*.5);
+  }
+  const H=Math.ceil(run(false));
+  c.height=H;
+  run(true);
+  return c;
+}
 function gigText(g){
   const L=['*'+gigTitle(g)+'*',longDate(g.date)];
   (g.times||[]).filter(t=>t.time||t.label).forEach(t=>L.push(timeLine(t)));
@@ -301,13 +437,22 @@ function gigText(g){
   if(g.note)L.push('',g.note);
   return L.join('\n');
 }
+function gigListText(gigs,opt){
+  const L=['*'+((opt&&opt.title)||'Auftritte')+'*'];
+  gigs.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(g=>{
+    L.push('','*'+longDate(g.date)+'*',gigTitle(g));
+    (g.times||[]).filter(t=>t.time||t.label).forEach(t=>L.push(timeLine(t)));
+    if(g.location)L.push('Ort: '+g.location);
+    if(opt&&opt.pieces&&(g.pieces||[]).length){L.push('Stücke:');g.pieces.forEach((p,i)=>L.push((i+1)+'. '+p))}
+  });
+  return L.join('\n');
+}
 function closeShare(){if(ui.shareImg){try{URL.revokeObjectURL(ui.shareImg.url)}catch(e){}ui.shareImg=null}}
-function makeGigImage(g){
-  const c=gigCanvas(g);
+function showCanvas(c,name){
   c.toBlob(b=>{
     if(!b){alert('Das Bild konnte nicht erstellt werden.');return}
     closeShare();
-    ui.shareImg={url:URL.createObjectURL(b),file:new File([b],'auftritt-'+g.date+'.png',{type:'image/png'})};
+    ui.shareImg={url:URL.createObjectURL(b),file:new File([b],name,{type:'image/png'})};
     render();
   },'image/png');
 }
@@ -318,46 +463,61 @@ async function shareFile(){
   }catch(err){if(err&&err.name==='AbortError')return}
   const a=document.createElement('a');a.href=s.url;a.download=s.file.name;document.body.appendChild(a);a.click();a.remove();
 }
-async function shareGigText(g){
-  const text=gigText(g);
+async function shareText(text){
   try{if(navigator.share){await navigator.share({text});return}}catch(err){if(err&&err.name==='AbortError')return}
   try{await navigator.clipboard.writeText(text);alert('Text kopiert. Du kannst ihn jetzt in WhatsApp einfügen.')}catch(e){prompt('Text zum Kopieren:',text)}
 }
-const shareOverlay=()=>ui.shareImg?`<div class="overlay"><div class="sheet"><img src="${ui.shareImg.url}" alt="Vorschau des Auftritts">
+const shareOverlay=()=>ui.shareImg?`<div class="overlay"><div class="sheet"><img src="${ui.shareImg.url}" alt="Vorschau">
   <div class="row" style="margin-top:12px"><button class="btn sp" data-a="doshare">Teilen</button><button class="btn sec" data-a="closeshare">Schließen</button></div>
   <div class="muted" style="margin-top:10px">„Teilen“ öffnet das iPad-Menü. Wähle dort WhatsApp und dann deine Chorgruppe. Alternativ hältst du das Bild gedrückt und wählst „Zu Fotos hinzufügen“.</div></div></div>`:'';
 
 /* ---------- Mitglieder ---------- */
 function memberForm(m,edit){
   return `<div class="card"><h2>${edit?'Mitglied bearbeiten':'Neues Mitglied'}</h2>
-  <input id="mName" placeholder="Name" value="${esc(m.name||'')}" autocomplete="off" style="margin:10px 0">
-  <div class="row" style="align-items:flex-end">
-    <label class="sp muted">Stimme<select id="mVoice">${VOICES.map(v=>`<option ${v===m.voice?'selected':''}>${v}</option>`).join('')}</select></label>
-    <label class="sp muted">Geburtstag<input type="date" id="mBirth" value="${m.birth||''}"></label>
-    <label class="sp muted">Chor-Eintritt<input type="date" id="mJoined" value="${m.joined||''}"></label>
+  <div class="fgrid">
+    <label>Vorname<input id="mFirst" value="${esc(m.first||'')}" autocomplete="off"></label>
+    <label>Nachname<input id="mLast" value="${esc(m.last||'')}" autocomplete="off"></label>
+    <label>Stimme<select id="mVoice">${VOICES.map(v=>`<option ${v===m.voice?'selected':''}>${v}</option>`).join('')}</select></label>
+    <label>Geburtstag<input type="date" id="mBirth" value="${m.birth||''}"></label>
+    <label>Chor-Eintritt<input type="date" id="mJoined" value="${m.joined||''}"></label>
+    <span></span>
+    <div>Chor-Austritt<div class="dwrap"><input type="date" id="mLeft" value="${m.left||''}"><button class="btn sec small" type="button" data-a="clearleft">Leeren</button></div></div>
+    <div class="hint muted">Nur ausfüllen, wenn die Person den Chor verlässt. Ab diesem Datum erscheint sie unter „Ehemalige“.</div>
   </div>
-  <div class="row" style="margin-top:12px"><button class="btn" data-a="${edit?'savemember':'addmember'}">${edit?'Speichern':'Hinzufügen'}</button>${edit?'<button class="btn sec" data-a="canceledit">Abbrechen</button>':''}</div></div>`;
+  <div class="row"><button class="btn" data-a="${edit?'savemember':'addmember'}">${edit?'Speichern':'Hinzufügen'}</button>${edit?'<button class="btn sec" data-a="canceledit">Abbrechen</button>':''}</div></div>`;
 }
 function viewMembers(){
   const em=ui.editMember&&db.members.find(x=>x.id===ui.editMember);
+  const cur=db.members.filter(m=>!isFormer(m)),former=db.members.filter(isFormer).sort(byName);
   let h=`<h1>Mitglieder</h1><div class="muted">${activeMembers().length} aktive Mitglieder</div>`;
   h+=em?memberForm(em,true):memberForm({voice:ui.lastVoice},false);
   for(const v of VOICES){
-    const ms=db.members.filter(m=>m.voice===v).sort(byName);
+    const ms=cur.filter(m=>m.voice===v).sort(byName);
     h+=`<h2 style="margin-top:18px">${v} <span class="muted">${ms.filter(m=>m.active!==false).length}</span></h2><div class="card">`;
-    h+=ms.length?ms.map(m=>`<div class="piece"><span>${esc(m.name)} ${m.active===false?'<span class="badge">pausiert</span>':''}${(!m.birth||!m.joined)?' <span class="badge">Datum fehlt</span>':''}</span>
+    h+=ms.length?ms.map(m=>`<div class="piece"><span>${esc(dn(m))} ${m.active===false?'<span class="badge">pausiert</span>':''}${m.left?` <span class="badge">Austritt ${fmtD(m.left)}</span>`:''}${(!m.birth||!m.joined)?' <span class="badge">Datum fehlt</span>':''}</span>
       <button class="btn sec small" data-a="editmember" data-id="${m.id}">Ändern</button>
       <button class="btn sec small" data-a="togglemember" data-id="${m.id}">${m.active===false?'Aktivieren':'Pausieren'}</button>
       <button class="btn danger small" data-a="delmember" data-id="${m.id}">✕</button></div>`).join(''):`<span class="muted">Noch niemand eingetragen.</span>`;
     h+=`</div>`;
   }
+  h+=`<h2 style="margin-top:22px">Ehemalige Mitglieder <span class="muted">${former.length}</span></h2><div class="card">`;
+  if(former.length){
+    h+=`<div class="fm hd"><span>Name</span><span>Geburtstag</span><span>Eintritt</span><span>Austritt</span><span>Zeit im Chor</span><span></span></div>`;
+    h+=former.map(m=>`<div class="fm"><b class="nm">${esc(dn(m))}</b>
+      <span><span class="lb">Geburtstag </span>${m.birth?fmtD(m.birth):'–'}</span>
+      <span><span class="lb">Eintritt </span>${m.joined?fmtD(m.joined):'–'}</span>
+      <span><span class="lb">Austritt </span>${fmtD(m.left)}</span>
+      <span><span class="lb">Zeit im Chor </span>${m.joined?(()=>{const s=span(pd(m.joined),pd(m.left));return s.y+' J., '+s.m+' Mon.'})():'–'}</span>
+      <span class="act"><button class="btn sec small" data-a="editmember" data-id="${m.id}">Ändern</button><button class="btn danger small" data-a="delmember" data-id="${m.id}">✕</button></span></div>`).join('');
+  }else h+=`<span class="muted">Keine ehemaligen Mitglieder.</span>`;
+  h+=`</div>`;
   return h;
 }
 
 /* ---------- Jubiläen ---------- */
 function viewJub(){
   const t=startOfToday();
-  const info=[...db.members].sort(byName).map(m=>{
+  const info=db.members.filter(m=>!isFormer(m)).sort(byName).map(m=>{
     const o={m};
     if(m.birth){o.age=span(pd(m.birth),t).y;o.nb=nextOcc(m.birth,t)}
     if(m.joined){o.ch=span(pd(m.joined),t);o.nj=nextOcc(m.joined,t)}
@@ -369,17 +529,19 @@ function viewJub(){
   });
   const soon=[];
   info.forEach(o=>{
-    if(o.bRound)soon.push({d:o.nb.days,date:o.nb.date,icon:'🎂',t:`${esc(o.m.name)} wird ${o.nb.n}`});
-    if(o.jRound)soon.push({d:o.jy.days,date:o.jy.date,icon:'🎶',t:`${esc(o.m.name)}: ${o.jy.n} Jahre im Chor`});
+    if(o.bRound)soon.push({d:o.nb.days,date:o.nb.date,icon:'🎂',t:`${esc(dn(o.m))} wird ${o.nb.n}`});
+    if(o.jRound)soon.push({d:o.jy.days,date:o.jy.date,icon:'🎶',t:`${esc(dn(o.m))}: ${o.jy.n} Jahre im Chor`});
   });
   soon.sort((a,b)=>(a.d<0)-(b.d<0)||(a.d<0?b.d-a.d:a.d-b.d));
+  const rb=recentBirthdays();
   let h=`<h1>Jubiläen</h1><div class="muted">Runde Geburtstage (alle 5 Jahre) werden ${SOON} Tage vorher hervorgehoben, runde Chorjahre (alle 5 Jahre) das ganze Jahr.</div>`;
+  if(rb.length)h+=`<div class="card"><h2><span class="dotin"></span>Geburtstag in den letzten 7 Tagen</h2>${rb.map(x=>`<div class="piece"><span>🎂 <b>${esc(dn(x.m))}</b> wurde ${x.n}<div class="muted">${fmtDM(x.date)} · ${agoText(x.days)}</div></span></div>`).join('')}</div>`;
   if(soon.length)h+=`<div class="card hl"><h2>Runde Termine</h2>${soon.map(s=>`<div class="piece"><span>${s.icon} <b>${s.t}</b><div class="muted">${fmtDM(s.date)} · ${s.d<0?'schon erreicht':dayText(s.d)}</div></span></div>`).join('')}</div>`;
   if(!info.length)h+=`<div class="card muted">Noch keine Mitglieder. Lege sie unter „Mitglieder“ an.</div>`;
   h+=info.map(o=>{
-    const chTxt=o.ch?(o.ch.y===0?`${o.ch.m} Monate`:`${o.ch.y} Jahre${o.ch.m?`, ${o.ch.m} Monat${o.ch.m>1?'e':''}`:''}`)+' im Chor':'';
+    const chTxt=o.ch?spanText(o.ch)+' im Chor':'';
     return `<div class="card ${o.bRound||o.jRound?'hl':''}">
-      <div class="row"><b class="sp">${esc(o.m.name)}</b>${o.m.active===false?'<span class="badge">pausiert</span>':''}<span class="badge">${o.m.voice}</span></div>
+      <div class="row"><b class="sp">${esc(dn(o.m))}</b>${o.m.active===false?'<span class="badge">pausiert</span>':''}<span class="badge">${o.m.voice}</span></div>
       <div class="two">
         <div><div class="muted">Geburtstag</div>
           ${o.m.birth?`<div>${fmtD(o.m.birth)}</div><div>${o.age} Jahre alt</div>${o.bRound?`<div class="flag">🎂 wird ${o.nb.n} am ${fmtDM(o.nb.date)} (${dayText(o.nb.days)})</div>`:''}`:`<div class="muted">nicht eingetragen</div>`}</div>
@@ -396,8 +558,8 @@ function viewStats(){
   const ev=db.events.filter(e=>e.date.startsWith(y));
   const pr=ev.filter(e=>e.type==='probe');
   const prAvg=avg(pr.map(presentCount));
-  // Wer zählt bei einer Probe mit? Aktive Mitglieder ab Eintrittsdatum, dazu jeder, der anwesend war.
-  const elig=e=>db.members.filter(m=>(m.active!==false&&(!m.joined||m.joined<=e.date))||e.present.includes(m.id));
+  // Wer zählt bei einer Probe mit? Aktive Mitglieder, die an dem Tag im Chor waren, dazu jeder, der anwesend war.
+  const elig=e=>db.members.filter(m=>(m.active!==false&&inChoir(m,e.date))||e.present.includes(m.id));
   const slots=pr.reduce((s,e)=>s+elig(e).length,0);
   const got=pr.reduce((s,e)=>s+presentCount(e),0);
   const c=t=>ev.filter(e=>e.type===t).length;
@@ -405,18 +567,23 @@ function viewStats(){
   h+=`<div class="grid">`+[['Proben',c('probe')],['Konzerte',c('konzert')],['Gottesdienste',c('gottesdienst')],['Gesamt',ev.length]].map(([l,n])=>`<div class="card"><div class="muted">${l} ${y}</div><div class="big">${n}</div></div>`).join('')+`</div>`;
   h+=`<div class="card"><div class="muted">Probenbeteiligung ${y} (nur Proben)</div>
     <div class="big">${slots?pct(got/slots):'–'}</div>
-    <div class="muted">${pr.length?`Ø ${f1(prAvg)} Sänger pro Probe bei Ø ${f1(slots/pr.length)} Mitgliedern (${pr.length} Proben). Neue Mitglieder zählen ab ihrem Chor-Eintritt.`:'Noch keine Proben in diesem Jahr.'}</div></div>`;
+    <div class="muted">${pr.length?`Ø ${f1(prAvg)} Sänger pro Probe bei Ø ${f1(slots/pr.length)} Mitgliedern (${pr.length} Proben). Neue Mitglieder zählen ab ihrem Chor-Eintritt, ehemalige bis zu ihrem Austritt.`:'Noch keine Proben in diesem Jahr.'}</div></div>`;
   h+=`<h2 style="margin-top:20px">Proben nach Stimme</h2><div class="card"><table>`+VOICES.map(v=>{
     const n=activeMembers().filter(m=>m.voice===v).length;
     const a=avg(pr.map(e=>presentOfVoice(e,v)));
     const sl=pr.reduce((s,e)=>s+elig(e).filter(m=>m.voice===v).length,0);
     const g=pr.reduce((s,e)=>s+presentOfVoice(e,v),0);
-    return `<tr><td>${v}</td><td class="muted">${n} Mitglieder</td><td>${pr.length?'Ø '+f1(a)+(sl?' ('+pct(g/sl)+')':''):'–'}</td></tr>`}).join('')+`</table></div>`;
-  const rows=db.members.filter(m=>m.active!==false||pr.some(e=>e.present.includes(m.id))).sort((a,b)=>VOICES.indexOf(a.voice)-VOICES.indexOf(b.voice)||byName(a,b));
-  h+=`<h2 style="margin-top:20px">Anwesenheit pro Mitglied</h2><div class="card">`+(rows.length?`<table><tr class="muted"><td>Name</td><td>Stimme</td><td>Proben</td><td>Anteil</td></tr>`+rows.map(m=>{
+    return `<tr><td>${v}</td><td class="muted">${n} Mitglied${n===1?'':'er'}</td><td>${pr.length?'Ø '+f1(a)+(sl?' ('+pct(g/sl)+')':''):'–'}</td></tr>`}).join('')+`</table></div>`;
+  // Anwesenheit pro Mitglied: höchster Anteil zuerst, die besten drei Prozentwerte farbig
+  const rows=db.members.filter(m=>pr.some(e=>e.present.includes(m.id))||(m.active!==false&&(!m.joined||m.joined<=y+'-12-31')&&(!m.left||m.left>=y+'-01-01'))).map(m=>{
     const n=pr.filter(e=>e.present.includes(m.id)).length;
-    const tot=pr.filter(e=>e.present.includes(m.id)||!m.joined||m.joined<=e.date).length;
-    return `<tr><td>${esc(m.name)}</td><td class="muted">${m.voice}</td><td>${n}/${tot}</td><td>${tot?pct(n/tot):'–'}</td></tr>`}).join('')+`</table>`:`<span class="muted">Keine Daten.</span>`)+`</div>`;
+    const tot=pr.filter(e=>e.present.includes(m.id)||inChoir(m,e.date)).length;
+    return{m,n,tot,p:tot?Math.round(n/tot*100):-1};
+  }).sort((a,b)=>b.p-a.p||b.n-a.n||byName(a.m,b.m));
+  const top=[...new Set(rows.filter(r=>r.p>0).map(r=>r.p))].slice(0,3);
+  h+=`<h2 style="margin-top:20px">Anwesenheit pro Mitglied</h2><div class="muted">Sortiert nach Anteil der besuchten Proben. Farbig: die drei besten Werte (bei Gleichstand auch mehr als drei Personen).</div><div class="card">`+(rows.length?`<table><tr class="muted"><td>Name</td><td>Stimme</td><td>Proben</td><td>Anteil</td></tr>`+rows.map(r=>{
+    const k=top.indexOf(r.p);
+    return `<tr class="${k>=0?'r'+(k+1):''}"><td>${esc(dn(r.m))}</td><td class="muted">${r.m.voice}</td><td>${r.n}/${r.tot}</td><td>${r.tot?r.p+' %':'–'}</td></tr>`}).join('')+`</table>`:`<span class="muted">Keine Daten.</span>`)+`</div>`;
   const cnt={};ev.filter(e=>e.type!=='probe').forEach(e=>e.pieces.forEach(p=>cnt[p]=(cnt[p]||0)+1));
   const ps=Object.entries(cnt).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'de'));
   h+=`<h2 style="margin-top:20px">Stücke bei Auftritten</h2><div class="card">`+(ps.length?`<table>`+ps.map(([p,n])=>`<tr><td>${esc(p)}</td><td>${n}×</td></tr>`).join('')+`</table>`:`<span class="muted">Noch keine Stücke eingetragen.</span>`)+`</div>`;
@@ -453,7 +620,7 @@ function doImport(file){
       const d=JSON.parse(r.result);
       if(!Array.isArray(d.members)||!Array.isArray(d.events))throw 0;
       if(!confirm(`Alle aktuellen Daten ersetzen durch ${d.members.length} Mitglieder, ${d.events.length} Termine und ${(d.gigs||[]).length} Auftritte?`))return;
-      db={members:d.members,events:d.events.map(e=>({present:[],pieces:[],title:'',...e})),gigs:(Array.isArray(d.gigs)?d.gigs:[]).map(g=>({title:'',location:'',note:'',times:[],pieces:[],...g}))};save();render();alert('Sicherung eingespielt.');
+      db={members:d.members.map(normMember),events:d.events.map(e=>({present:[],pieces:[],title:'',...e})),gigs:(Array.isArray(d.gigs)?d.gigs:[]).map(normGig)};save();render();alert('Sicherung eingespielt.');
     }catch(e){alert('Diese Datei ist keine gültige Sicherung.')}
   };
   r.readAsText(file);
@@ -465,13 +632,16 @@ function render(){
   const v=ui.eventId?viewEvent:ui.gigId?viewGig:{termine:viewTermine,auftritte:viewGigs,mitglieder:viewMembers,jubilaeen:viewJub,statistik:viewStats,sicherung:viewBackup}[ui.tab];
   $('#app').innerHTML=v()+shareOverlay();
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===ui.tab));
+  const dot=document.querySelector('nav [data-t="jubilaeen"] .dot');
+  if(dot)dot.classList.toggle('on',recentBirthdays().length>0);
+  fitChips();
   window.scrollTo(0,y);
   if(ui.focus){const el=$(ui.focus);if(el)el.focus();ui.focus=null}
 }
 
 document.addEventListener('click',ev=>{
   const t=ev.target.closest('[data-t]');
-  if(t){ui.tab=t.dataset.t;ui.eventId=null;ui.showNew=false;ui.editMember=null;ui.gigId=null;ui.showNewGig=false;closeShare();window.scrollTo(0,0);render();return}
+  if(t){ui.tab=t.dataset.t;ui.eventId=null;ui.showNew=false;ui.editMember=null;ui.gigId=null;ui.showNewGig=false;ui.listMode=false;closeShare();window.scrollTo(0,0);render();return}
   const b=ev.target.closest('[data-a]');if(!b)return;
   const a=b.dataset.a,id=b.dataset.id,e=getEvent(),g=getGig();
   if(a==='new'){ui.showNew=true}
@@ -484,27 +654,30 @@ document.addEventListener('click',ev=>{
   else if(a==='open'){ui.eventId=id;window.scrollTo(0,0)}
   else if(a==='back'){ui.eventId=null;window.scrollTo(0,0)}
   else if(a==='toggle'&&e){e.present=e.present.includes(id)?e.present.filter(x=>x!==id):[...e.present,id];save()}
-  else if(a==='all'&&e){const ids=db.members.filter(m=>m.voice===b.dataset.v&&m.active!==false).map(m=>m.id);e.present=[...new Set([...e.present,...ids])];save()}
+  else if(a==='all'&&e){const ids=db.members.filter(m=>m.voice===b.dataset.v&&m.active!==false&&inChoir(m,e.date)).map(m=>m.id);e.present=[...new Set([...e.present,...ids])];save()}
   else if(a==='none'&&e){const ids=new Set(db.members.filter(m=>m.voice===b.dataset.v).map(m=>m.id));e.present=e.present.filter(x=>!ids.has(x));save()}
   else if(a==='addpiece'&&e){const i=$('#pInput'),p=i.value.trim();if(!p)return;e.pieces.push(p);save();ui.focus='#pInput'}
   else if(a==='delpiece'&&e){e.pieces.splice(+b.dataset.i,1);save()}
   else if(a==='delevent'&&e){if(!confirm('Diesen Termin wirklich löschen?'))return;db.events=db.events.filter(x=>x.id!==e.id);save();ui.eventId=null}
   else if(a==='addmember'){
-    const name=$('#mName').value.trim();if(!name){alert('Bitte einen Namen eingeben.');return}
+    const first=$('#mFirst').value.trim(),last=$('#mLast').value.trim();
+    if(!first&&!last){alert('Bitte Vor- und Nachnamen eingeben.');return}
     ui.lastVoice=$('#mVoice').value;
-    db.members.push({id:uid(),name,voice:ui.lastVoice,birth:$('#mBirth').value||'',joined:$('#mJoined').value||'',active:true});save();ui.focus='#mName';
+    db.members.push(normMember({id:uid(),first,last,voice:ui.lastVoice,birth:$('#mBirth').value||'',joined:$('#mJoined').value||'',left:$('#mLeft').value||'',active:true}));save();ui.focus='#mFirst';
   }
   else if(a==='editmember'){ui.editMember=id;window.scrollTo(0,0)}
   else if(a==='canceledit'){ui.editMember=null}
+  else if(a==='clearleft'){const i=$('#mLeft');if(i)i.value='';return}
   else if(a==='savemember'){
     const m=db.members.find(x=>x.id===ui.editMember);
-    const name=$('#mName').value.trim();if(!name){alert('Bitte einen Namen eingeben.');return}
-    m.name=name;m.voice=$('#mVoice').value;m.birth=$('#mBirth').value||'';m.joined=$('#mJoined').value||'';save();ui.editMember=null;
+    const first=$('#mFirst').value.trim(),last=$('#mLast').value.trim();
+    if(!first&&!last){alert('Bitte Vor- und Nachnamen eingeben.');return}
+    m.first=first;m.last=last;m.voice=$('#mVoice').value;m.birth=$('#mBirth').value||'';m.joined=$('#mJoined').value||'';m.left=$('#mLeft').value||'';normMember(m);save();ui.editMember=null;
   }
   else if(a==='togglemember'){const m=db.members.find(x=>x.id===id);m.active=m.active===false;save()}
   else if(a==='delmember'){
     const m=db.members.find(x=>x.id===id);
-    if(!confirm(`${m.name} wirklich löschen? Die Anwesenheiten gehen dabei verloren. Tipp: „Pausieren“ behält alle Daten.`))return;
+    if(!confirm(`${dn(m)} wirklich löschen? Die Anwesenheiten gehen dabei verloren. Tipp: „Pausieren“ oder ein Chor-Austritt behält alle Daten.`))return;
     if(ui.editMember===id)ui.editMember=null;
     db.members=db.members.filter(x=>x.id!==id);db.events.forEach(x=>x.present=x.present.filter(p=>p!==id));save();
   }
@@ -524,8 +697,14 @@ document.addEventListener('click',ev=>{
   else if(a==='upgpiece'&&g){const i=+b.dataset.i;if(i>0){[g.pieces[i-1],g.pieces[i]]=[g.pieces[i],g.pieces[i-1]];save()}}
   else if(a==='downgpiece'&&g){const i=+b.dataset.i;if(i<g.pieces.length-1){[g.pieces[i+1],g.pieces[i]]=[g.pieces[i],g.pieces[i+1]];save()}}
   else if(a==='delgig'&&g){if(!confirm('Diesen Auftritt wirklich löschen?'))return;db.gigs=db.gigs.filter(x=>x.id!==g.id);save();ui.gigId=null}
-  else if(a==='gigimg'&&g){makeGigImage(g);return}
-  else if(a==='gigtxt'&&g){shareGigText(g);return}
+  else if(a==='gigimg'&&g){showCanvas(gigCanvas(g),'auftritt-'+g.date+'.png');return}
+  else if(a==='gigtxt'&&g){shareText(gigText(g));return}
+  else if(a==='listmode'){ui.listMode=true;ui.listSel=db.gigs.filter(x=>x.date>=today()).map(x=>x.id);window.scrollTo(0,0)}
+  else if(a==='backlist'){ui.listMode=false;window.scrollTo(0,0)}
+  else if(a==='tgllist'){ui.listSel=ui.listSel.includes(id)?ui.listSel.filter(x=>x!==id):[...ui.listSel,id]}
+  else if(a==='tglpieces'){ui.listPieces=!ui.listPieces}
+  else if(a==='listimg'){const gs=listGigs();if(gs.length)showCanvas(gigListCanvas(gs,{title:ui.listTitle,pieces:ui.listPieces}),'auftritte-liste.png');return}
+  else if(a==='listtxt'){const gs=listGigs();if(gs.length)shareText(gigListText(gs,{title:ui.listTitle,pieces:ui.listPieces}));return}
   else if(a==='doshare'){shareFile();return}
   else if(a==='closeshare'){closeShare()}
   else if(a==='export'){doExport();return}
@@ -534,6 +713,7 @@ document.addEventListener('click',ev=>{
 document.addEventListener('change',ev=>{
   const c=ev.target.dataset.c;if(!c)return;
   if(applyGigField(ev.target))return;
+  if(c==='ltitle'){ui.listTitle=ev.target.value;return}
   const e=getEvent();
   if(c==='year'){ui.year=+ev.target.value}
   else if(c==='evdate'&&e){if(ev.target.value){e.date=ev.target.value;ui.year=+e.date.slice(0,4);save()}}
@@ -542,18 +722,20 @@ document.addEventListener('change',ev=>{
   else if(c==='import'){doImport(ev.target.files[0]);return}
   render();
 });
-// Eingaben sofort speichern (ohne Neuzeichnen), damit nichts verloren geht, wenn gleich danach geteilt wird
+// Eingaben sofort speichern (ohne Neuzeichnen), damit nichts verloren geht
 document.addEventListener('input',ev=>{
   const el=ev.target;if(!el.dataset||!el.dataset.c)return;
   if(applyGigField(el))return;
+  if(el.dataset.c==='ltitle'){ui.listTitle=el.value;return}
   if(el.dataset.c==='evtitle'){const e=getEvent();if(e){e.title=el.value;save()}}
 });
 document.addEventListener('keydown',ev=>{
   if(ev.key!=='Enter')return;
-  if(ev.target.id==='gpInput')document.querySelector('[data-a="addgpiece"]').click();
-  if(ev.target.id==='mName'){const btn=document.querySelector('[data-a="addmember"],[data-a="savemember"]');if(btn)btn.click()}
+  if(ev.target.id==='mFirst'||ev.target.id==='mLast'){const btn=document.querySelector('[data-a="addmember"],[data-a="savemember"]');if(btn)btn.click()}
   if(ev.target.id==='pInput')document.querySelector('[data-a="addpiece"]').click();
+  if(ev.target.id==='gpInput')document.querySelector('[data-a="addgpiece"]').click();
 });
+window.addEventListener('resize',fitChips);
 
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
