@@ -51,7 +51,8 @@ nav button.on{background:var(--acc);color:#fff;font-weight:600}
 .chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:8px 0 16px}
 .chip{display:flex;align-items:center;gap:6px;font:inherit;font-size:16px;font-weight:500;padding:0 10px;height:54px;min-width:0;overflow:hidden;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--fg);text-align:left}
 .chip .ck{width:1.1em;flex:none;visibility:hidden}
-.chip .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip .t{flex:1;min-width:0;overflow:hidden;text-overflow:clip}
+.chip .tt{display:inline-block;white-space:nowrap}
 .chip.on{background:var(--on);border-color:var(--on);color:#fff}
 .chip.on .ck{visibility:visible}
 .count b{font-size:30px}
@@ -131,7 +132,7 @@ const normGig=g=>({title:'',location:'',note:'',times:[],pieces:[],...g});
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&Array.isArray(d.members)&&Array.isArray(d.events)){d.members.forEach(normMember);d.gigs=(Array.isArray(d.gigs)?d.gigs:[]).map(normGig);return d}}catch(e){}return{members:[],events:[],gigs:[]}}
 let db=load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert('Speichern ist fehlgeschlagen. Bitte mache eine Sicherung.')}}
-let ui={tab:'termine',year:new Date().getFullYear(),eventId:null,showNew:false,editMember:null,gigId:null,showNewGig:false,listMode:false,listSel:[],listPieces:false,listTitle:'Nächste Auftritte',shareImg:null,lastVoice:'Sopran',focus:null};
+let ui={tab:'termine',year:new Date().getFullYear(),eventId:null,showNew:false,editMember:null,showNewMember:false,gigId:null,showNewGig:false,listMode:false,listSel:[],listPieces:false,listTitle:'Termine Jakobuschor',shareImg:null,lastVoice:'Sopran',focus:null};
 
 const isFormer=m=>!!m.left&&m.left<=today();
 const inChoir=(m,d)=>(!m.joined||m.joined<=d)&&(!m.left||d<=m.left);
@@ -192,7 +193,7 @@ function viewTermine(){
   if(!ev.length)h+=`<div class="muted" style="margin-top:16px">Noch keine Termine in ${y}.</div>`;
   h+=ev.map(e=>`<button class="ev" data-a="open" data-id="${e.id}">
     <div class="sp"><div><b>${fmt(e.date)}</b></div><div class="muted">${esc(e.title)||''}${e.pieces.length?` · ${e.pieces.length} Stück${e.pieces.length>1?'e':''}`:''}</div></div>
-    <span class="badge ${e.type}">${TYPES[e.type]}</span><b style="min-width:70px;text-align:right">${presentCount(e)} 🎵</b></button>`).join('');
+    <span class="badge ${e.type}">${TYPES[e.type]}</span><b style="min-width:70px;text-align:right">${presentCount(e)} 👥</b></button>`).join('');
   return h;
 }
 
@@ -209,7 +210,7 @@ function viewEvent(){
     const ms=eligibleFor(e,v);
     h+=`<div class="row" style="margin-top:14px"><h2 class="sp">${v} <span class="muted">${presentOfVoice(e,v)}/${ms.length}</span></h2>
       <button class="btn sec small" data-a="all" data-v="${v}">alle</button><button class="btn sec small" data-a="none" data-v="${v}">keine</button></div>`;
-    h+=ms.length?`<div class="chips">${ms.map(m=>`<button class="chip ${pres.has(m.id)?'on':''}" data-a="toggle" data-id="${m.id}"><span class="ck">✓</span><span class="t">${esc(dn(m))}</span></button>`).join('')}</div>`:`<div class="muted" style="margin:6px 0 12px">Keine Mitglieder in dieser Stimme.</div>`;
+    h+=ms.length?`<div class="chips">${ms.map(m=>`<button class="chip ${pres.has(m.id)?'on':''}" data-a="toggle" data-id="${m.id}"><span class="ck">✓</span><span class="t"><span class="tt">${esc(dn(m))}</span></span></button>`).join('')}</div>`:`<div class="muted" style="margin:6px 0 12px">Keine Mitglieder in dieser Stimme.</div>`;
   }
   h+=`<div class="card"><h2>${e.type==='probe'?'Geprobte Stücke':'Gesungene Stücke'}</h2>
     ${e.pieces.map((p,i)=>`<div class="piece"><span>${esc(p)}</span><button class="btn danger small" data-a="delpiece" data-i="${i}">✕</button></div>`).join('')}
@@ -220,14 +221,16 @@ function viewEvent(){
 
 /* Schrift in den Namensfeldern verkleinern, bis der Name hineinpasst (das Feld bleibt gleich groß) */
 function fitChips(){
-  document.querySelectorAll('.chip .t').forEach(el=>{
-    el.style.whiteSpace='nowrap';el.style.lineHeight='';el.style.maxHeight='';
-    let s=16;el.style.fontSize=s+'px';
-    while(el.scrollWidth>el.clientWidth&&s>11){s-=0.5;el.style.fontSize=s+'px'}
-    if(el.scrollWidth>el.clientWidth){ // sehr langer Name: zwei kleine Zeilen im selben Feld
-      el.style.whiteSpace='normal';el.style.lineHeight='1.15';el.style.maxHeight='44px';
-      s=14;el.style.fontSize=s+'px';
-      while((el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1)&&s>8){s-=0.5;el.style.fontSize=s+'px'}
+  document.querySelectorAll('.chip .t').forEach(box=>{
+    const tt=box.firstElementChild;if(!tt)return;
+    const room=()=>box.clientWidth-2; // 2 px Reserve, gemessen wird auf Bruchteile von Pixeln genau
+    tt.style.display='inline-block';tt.style.whiteSpace='nowrap';tt.style.lineHeight='';tt.style.overflowWrap='';
+    let s=16;box.style.fontSize=s+'px';
+    while(tt.getBoundingClientRect().width>room()&&s>11){s-=0.5;box.style.fontSize=s+'px'}
+    if(tt.getBoundingClientRect().width>room()){ // sehr langer Name: zwei kleine Zeilen im selben Feld
+      tt.style.display='block';tt.style.whiteSpace='normal';tt.style.lineHeight='1.15';tt.style.overflowWrap='anywhere';
+      s=14;box.style.fontSize=s+'px';
+      while(tt.getBoundingClientRect().height>44&&s>8){s-=0.5;box.style.fontSize=s+'px'}
     }
   });
 }
@@ -272,7 +275,7 @@ function viewGigList(){
   return `<button class="btn sec small" data-a="backlist">‹ Zurück</button>
   <h1 style="margin-top:12px">Liste teilen</h1><div class="muted">Wähle die Auftritte aus, die in der Liste stehen sollen.</div>
   <div class="card"><div class="muted">Überschrift</div><input data-c="ltitle" value="${esc(ui.listTitle)}" autocomplete="off" style="margin-top:6px">
-    <div class="chips" style="margin:12px 0 0"><button class="chip ${ui.listPieces?'on':''}" data-a="tglpieces"><span class="ck">✓</span><span class="t">Stücke mit anzeigen</span></button></div></div>
+    <div class="chips" style="margin:12px 0 0"><button class="chip ${ui.listPieces?'on':''}" data-a="tglpieces"><span class="ck">✓</span><span class="t"><span class="tt">Stücke mit anzeigen</span></span></button></div></div>
   ${up.length?`<h2 style="margin-top:16px">Anstehend</h2>`+up.map(row).join(''):''}
   ${past.length?`<h2 style="margin-top:16px">Vergangen</h2>`+past.map(row).join(''):''}
   <div class="card"><div class="muted" style="margin-bottom:10px">${n} Auftritt${n===1?'':'e'} ausgewählt</div>
@@ -396,16 +399,13 @@ function gigListCanvas(gigs,opt){
   };
   const items=gigs.slice().sort((a,b)=>a.date.localeCompare(b.date));
   const head=(opt&&opt.title)||'Auftritte';
-  const sub=items.length>1?fmtD(items[0].date)+' – '+fmtD(items[items.length-1].date):(items[0]?fmtD(items[0].date):'');
   function run(draw){
     const txt=(s,x,y,col)=>{if(draw){ctx.fillStyle=col;ctx.fillText(s,x,y)}};
-    set(60,700);const tl=wrap(head,W-2*P);
-    const headH=P+tl.length*72+8+44+Math.round(P*.6);
+    set(52,700);const tl=wrap(head,W-2*P);
+    const headH=38+tl.length*62+38;
     if(draw){ctx.fillStyle='#faf6f1';ctx.fillRect(0,0,W,c.height);ctx.fillStyle='#7a2e3a';ctx.fillRect(0,0,W,headH)}
-    let y=P;
-    set(60,700);tl.forEach((l,i)=>txt(l,P,y+i*72,'#ffffff'));y+=tl.length*72+8;
-    set(34,400);txt(sub,P,y,'#f3e3cf');
-    y=headH+44;
+    set(52,700);tl.forEach((l,i)=>txt(l,P,38+i*62,'#ffffff'));
+    let y=headH+44;
     items.forEach((g,idx)=>{
       const y0=y;const x=P+IN;
       set(32,700);wrap(longDate(g.date),CW).forEach(l=>{txt(l,x,y,'#7a2e3a');y+=42});
@@ -415,8 +415,13 @@ function gigListCanvas(gigs,opt){
       if(times.length)wrap(times.map(t=>[fmtTime(t.time),t.label].filter(Boolean).join(' ')).join('   ·   '),CW).forEach(l=>{txt(l,x,y,'#1d1b1a');y+=46});
       if(g.location){set(34,400);wrap('Ort: '+g.location,CW).forEach(l=>{txt(l,x,y,'#1d1b1a');y+=46})}
       if(opt&&opt.pieces&&(g.pieces||[]).length){
-        set(32,400);
-        wrap('Stücke: '+g.pieces.map((p,i)=>(i+1)+'. '+p).join('  ·  '),CW).forEach(l=>{txt(l,x,y,'#555555');y+=42});
+        y+=6;
+        g.pieces.forEach((p,i)=>{
+          set(32,400);const pl=wrap(p,CW-56);
+          set(32,700);txt((i+1)+'.',x,y,'#7a2e3a');
+          set(32,400);pl.forEach((l,k)=>txt(l,x+56,y+k*42,'#555555'));
+          y+=pl.length*42;
+        });
       }
       if(draw){ctx.fillStyle='#7a2e3a';ctx.fillRect(P,y0+4,8,Math.max(10,y-y0-10))}
       y+=26;
@@ -443,7 +448,7 @@ function gigListText(gigs,opt){
     L.push('','*'+longDate(g.date)+'*',gigTitle(g));
     (g.times||[]).filter(t=>t.time||t.label).forEach(t=>L.push(timeLine(t)));
     if(g.location)L.push('Ort: '+g.location);
-    if(opt&&opt.pieces&&(g.pieces||[]).length){L.push('Stücke:');g.pieces.forEach((p,i)=>L.push((i+1)+'. '+p))}
+    if(opt&&opt.pieces&&(g.pieces||[]).length){g.pieces.forEach((p,i)=>L.push((i+1)+'. '+p))}
   });
   return L.join('\n');
 }
@@ -484,13 +489,13 @@ function memberForm(m,edit){
     <div>Chor-Austritt<div class="dwrap"><input type="date" id="mLeft" value="${m.left||''}"><button class="btn sec small" type="button" data-a="clearleft">Leeren</button></div></div>
     <div class="hint muted">Nur ausfüllen, wenn die Person den Chor verlässt. Ab diesem Datum erscheint sie unter „Ehemalige“.</div>
   </div>
-  <div class="row"><button class="btn" data-a="${edit?'savemember':'addmember'}">${edit?'Speichern':'Hinzufügen'}</button>${edit?'<button class="btn sec" data-a="canceledit">Abbrechen</button>':''}</div></div>`;
+  <div class="row"><button class="btn" data-a="${edit?'savemember':'addmember'}">${edit?'Speichern':'Hinzufügen'}</button><button class="btn sec" data-a="${edit?'canceledit':'cancelnewmember'}">Abbrechen</button></div></div>`;
 }
 function viewMembers(){
   const em=ui.editMember&&db.members.find(x=>x.id===ui.editMember);
   const cur=db.members.filter(m=>!isFormer(m)),former=db.members.filter(isFormer).sort(byName);
   let h=`<h1>Mitglieder</h1><div class="muted">${activeMembers().length} aktive Mitglieder</div>`;
-  h+=em?memberForm(em,true):memberForm({voice:ui.lastVoice},false);
+  h+=em?memberForm(em,true):ui.showNewMember?memberForm({voice:ui.lastVoice},false):`<button class="btn wide" data-a="newmember">+ Neues Mitglied</button>`;
   for(const v of VOICES){
     const ms=cur.filter(m=>m.voice===v).sort(byName);
     h+=`<h2 style="margin-top:18px">${v} <span class="muted">${ms.filter(m=>m.active!==false).length}</span></h2><div class="card">`;
@@ -641,7 +646,7 @@ function render(){
 
 document.addEventListener('click',ev=>{
   const t=ev.target.closest('[data-t]');
-  if(t){ui.tab=t.dataset.t;ui.eventId=null;ui.showNew=false;ui.editMember=null;ui.gigId=null;ui.showNewGig=false;ui.listMode=false;closeShare();window.scrollTo(0,0);render();return}
+  if(t){ui.tab=t.dataset.t;ui.eventId=null;ui.showNew=false;ui.editMember=null;ui.showNewMember=false;ui.gigId=null;ui.showNewGig=false;ui.listMode=false;closeShare();window.scrollTo(0,0);render();return}
   const b=ev.target.closest('[data-a]');if(!b)return;
   const a=b.dataset.a,id=b.dataset.id,e=getEvent(),g=getGig();
   if(a==='new'){ui.showNew=true}
@@ -663,9 +668,11 @@ document.addEventListener('click',ev=>{
     const first=$('#mFirst').value.trim(),last=$('#mLast').value.trim();
     if(!first&&!last){alert('Bitte Vor- und Nachnamen eingeben.');return}
     ui.lastVoice=$('#mVoice').value;
-    db.members.push(normMember({id:uid(),first,last,voice:ui.lastVoice,birth:$('#mBirth').value||'',joined:$('#mJoined').value||'',left:$('#mLeft').value||'',active:true}));save();ui.focus='#mFirst';
+    db.members.push(normMember({id:uid(),first,last,voice:ui.lastVoice,birth:$('#mBirth').value||'',joined:$('#mJoined').value||'',left:$('#mLeft').value||'',active:true}));save();ui.showNewMember=false;
   }
-  else if(a==='editmember'){ui.editMember=id;window.scrollTo(0,0)}
+  else if(a==='newmember'){ui.showNewMember=true;ui.focus='#mFirst'}
+  else if(a==='cancelnewmember'){ui.showNewMember=false}
+  else if(a==='editmember'){ui.editMember=id;ui.showNewMember=false;window.scrollTo(0,0)}
   else if(a==='canceledit'){ui.editMember=null}
   else if(a==='clearleft'){const i=$('#mLeft');if(i)i.value='';return}
   else if(a==='savemember'){
@@ -736,6 +743,7 @@ document.addEventListener('keydown',ev=>{
   if(ev.target.id==='gpInput')document.querySelector('[data-a="addgpiece"]').click();
 });
 window.addEventListener('resize',fitChips);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitChips);
 
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
