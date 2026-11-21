@@ -34,7 +34,7 @@ label select,label input{width:100%}
 .btn.small{padding:6px 12px;min-height:36px;font-size:15px}
 .btn.wide{width:100%;margin:10px 0}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:10}
-nav button{flex:1;background:none;border:0;font:inherit;font-size:12px;color:var(--mute);padding:10px 2px;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button{flex:1;background:none;border:0;font:inherit;font-size:11px;color:var(--mute);padding:10px 1px;display:flex;flex-direction:column;align-items:center;gap:2px}
 nav button span{font-size:22px}
 nav button.on{color:var(--acc);font-weight:600}
 .ev{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:inherit;background:var(--card);border:0;border-radius:14px;padding:14px 16px;margin:8px 0;min-height:64px}
@@ -57,12 +57,20 @@ td:last-child,td:nth-child(3){text-align:right}
 .warn{border:1.5px solid var(--danger)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
 .flag{font-weight:600;margin-top:4px}
+textarea{font:inherit;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;margin-top:10px}
+input[type=time]{min-width:130px}
+.btn:disabled{opacity:.35}
+.piece b{min-width:28px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:50;overflow:auto;padding:max(16px,env(safe-area-inset-top)) 16px 24px}
+.sheet{max-width:560px;margin:0 auto;background:var(--card);border-radius:16px;padding:14px}
+.sheet img{width:100%;display:block;border-radius:10px}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <nav>
   <button data-t="termine"><span>📅</span>Termine</button>
+  <button data-t="auftritte"><span>🎤</span>Auftritte</button>
   <button data-t="mitglieder"><span>👥</span>Mitglieder</button>
   <button data-t="jubilaeen"><span>🎂</span>Jubiläen</button>
   <button data-t="statistik"><span>📊</span>Statistik</button>
@@ -84,13 +92,14 @@ const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
 const f1=n=>n.toLocaleString('de-DE',{maximumFractionDigits:1});
 const pct=n=>Math.round(n*100)+' %';
 
-function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&Array.isArray(d.members)&&Array.isArray(d.events))return d}catch(e){}return{members:[],events:[]}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&Array.isArray(d.members)&&Array.isArray(d.events)){d.gigs=(Array.isArray(d.gigs)?d.gigs:[]).map(g=>({title:'',location:'',note:'',times:[],pieces:[],...g}));return d}}catch(e){}return{members:[],events:[],gigs:[]}}
 let db=load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert('Speichern ist fehlgeschlagen. Bitte mache eine Sicherung.')}}
-let ui={tab:'termine',year:new Date().getFullYear(),eventId:null,showNew:false,editMember:null,lastVoice:'Sopran',focus:null};
+let ui={tab:'termine',year:new Date().getFullYear(),eventId:null,showNew:false,editMember:null,gigId:null,showNewGig:false,shareImg:null,lastVoice:'Sopran',focus:null};
 
 const activeMembers=()=>db.members.filter(m=>m.active!==false);
 const getEvent=()=>db.events.find(e=>e.id===ui.eventId);
+const getGig=()=>db.gigs.find(g=>g.id===ui.gigId);
 const presentCount=e=>e.present.filter(id=>db.members.some(m=>m.id===id)).length;
 const presentOfVoice=(e,v)=>e.present.filter(id=>{const m=db.members.find(x=>x.id===id);return m&&m.voice===v}).length;
 function years(){const s=new Set([new Date().getFullYear()]);db.events.forEach(e=>s.add(+e.date.slice(0,4)));return[...s].sort((a,b)=>b-a)}
@@ -157,6 +166,166 @@ function viewEvent(){
   <button class="btn danger wide" data-a="delevent">Termin löschen</button>`;
   return h;
 }
+
+/* ---------- Auftritte ---------- */
+const GTYPES={gottesdienst:'Gottesdienst',konzert:'Konzert',sonstiges:'Sonstiges'};
+const fmtTime=t=>{if(!t)return'';const [h,m]=t.split(':');return (+h)+':'+m+' Uhr'};
+const longDate=d=>new Date(d+'T12:00:00').toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const timeLine=t=>[t.label,fmtTime(t.time)].filter(Boolean).join(' ');
+const gigTitle=g=>g.title||GTYPES[g.type]||'Auftritt';
+
+function gigCard(g){
+  return `<button class="ev" data-a="opengig" data-id="${g.id}">
+    <div class="sp"><div><b>${esc(gigTitle(g))}</b></div><div class="muted">${fmt(g.date)}${g.location?' · '+esc(g.location):''}</div></div>
+    <span class="badge ${g.type}">${GTYPES[g.type]||'Sonstiges'}</span></button>`;
+}
+function viewGigs(){
+  const t=today();
+  const up=db.gigs.filter(g=>g.date>=t).sort((a,b)=>a.date.localeCompare(b.date));
+  const past=db.gigs.filter(g=>g.date<t).sort((a,b)=>b.date.localeCompare(a.date));
+  let h=`<h1>Auftritte</h1><div class="muted">Gottesdienste, Konzerte und andere Auftritte planen und als Bild oder Text teilen.</div>`;
+  if(ui.showNewGig){
+    h+=`<div class="card"><h2>Neuer Auftritt</h2>
+      <div class="row" style="margin:10px 0"><select id="gType">${Object.entries(GTYPES).map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select><input type="date" id="gDate" value="${today()}"></div>
+      <input id="gTitle" placeholder="Titel (z. B. Adventskonzert)" autocomplete="off">
+      <div class="row" style="margin-top:12px"><button class="btn" data-a="creategig">Anlegen</button><button class="btn sec" data-a="cancelnewgig">Abbrechen</button></div></div>`;
+  }else h+=`<button class="btn wide" data-a="newgig">+ Neuer Auftritt</button>`;
+  if(!db.gigs.length)h+=`<div class="muted" style="margin-top:16px">Noch keine Auftritte angelegt.</div>`;
+  if(up.length)h+=`<h2 style="margin-top:18px">Anstehend</h2>`+up.map(gigCard).join('');
+  if(past.length)h+=`<h2 style="margin-top:18px">Vergangen</h2>`+past.map(gigCard).join('');
+  return h;
+}
+function viewGig(){
+  const g=getGig();if(!g){ui.gigId=null;return viewGigs()}
+  const allP=[...new Set([...db.gigs.flatMap(x=>x.pieces||[]),...db.events.flatMap(x=>x.pieces||[])])].sort((a,b)=>a.localeCompare(b,'de'));
+  const LABELS=['Einsingen','Treffpunkt','Generalprobe','Einlass','Beginn','Gottesdienst','Konzert'];
+  return `<button class="btn sec small" data-a="backgig">‹ Zurück</button>
+  <div class="card">
+    <div class="row" style="margin-bottom:10px"><select data-c="gtype">${Object.entries(GTYPES).map(([k,l])=>`<option value="${k}" ${k===g.type?'selected':''}>${l}</option>`).join('')}</select><input type="date" data-c="gdate" value="${g.date}"></div>
+    <input data-c="gtitle" placeholder="Titel" value="${esc(g.title)}" autocomplete="off">
+  </div>
+  <div class="card"><h2>Zeiten</h2>
+    ${g.times.map((t,i)=>`<div class="row" style="margin-top:10px"><input type="time" data-c="gtime" data-i="${i}" value="${esc(t.time)}"><input class="sp" data-c="glabel" data-i="${i}" list="lList" placeholder="z. B. Einsingen" value="${esc(t.label)}" autocomplete="off"><button class="btn danger small" data-a="deltime" data-i="${i}">✕</button></div>`).join('')}
+    <datalist id="lList">${LABELS.map(l=>`<option value="${l}">`).join('')}</datalist>
+    <button class="btn sec small" style="margin-top:12px" data-a="addtime">+ Zeit hinzufügen</button></div>
+  <div class="card"><h2>Ort</h2><input data-c="gloc" placeholder="z. B. Jakobuskirche" value="${esc(g.location)}" autocomplete="off" style="margin-top:10px"></div>
+  <div class="card"><h2>Stücke</h2>
+    ${g.pieces.map((p,i)=>`<div class="piece"><b>${i+1}.</b><span>${esc(p)}</span><button class="btn sec small" data-a="upgpiece" data-i="${i}" ${i===0?'disabled':''}>↑</button><button class="btn sec small" data-a="downgpiece" data-i="${i}" ${i===g.pieces.length-1?'disabled':''}>↓</button><button class="btn danger small" data-a="delgpiece" data-i="${i}">✕</button></div>`).join('')}
+    <div class="row" style="margin-top:10px"><input id="gpInput" class="sp" list="gpList" placeholder="Stück hinzufügen" autocomplete="off"><datalist id="gpList">${allP.map(p=>`<option value="${esc(p)}">`).join('')}</datalist><button class="btn" data-a="addgpiece">Hinzufügen</button></div></div>
+  <div class="card"><h2>Hinweise</h2><textarea data-c="gnote" rows="3" placeholder="Optional, z. B. Kleidung, Parken, Treffpunkt">${esc(g.note)}</textarea></div>
+  <div class="card"><h2>Teilen</h2><div class="muted" style="margin:6px 0 12px">Erstellt eine Vorschau, die du in deine WhatsApp-Gruppe schicken kannst.</div>
+    <div class="row"><button class="btn" data-a="gigimg">Als Bild</button><button class="btn sec" data-a="gigtxt">Als Text</button></div></div>
+  <button class="btn danger wide" data-a="delgig">Auftritt löschen</button>`;
+}
+function applyGigField(el){
+  const c=el.dataset.c;
+  if(!/^g(type|title|date|loc|note|time|label)$/.test(c))return false;
+  const g=getGig();if(!g)return true;
+  const i=+el.dataset.i;
+  if(c==='gtype')g.type=el.value;
+  else if(c==='gtitle')g.title=el.value;
+  else if(c==='gdate'){if(el.value)g.date=el.value}
+  else if(c==='gloc')g.location=el.value;
+  else if(c==='gnote')g.note=el.value;
+  else if(c==='gtime'&&g.times[i])g.times[i].time=el.value;
+  else if(c==='glabel'&&g.times[i])g.times[i].label=el.value;
+  save();return true;
+}
+
+/* Bild für WhatsApp: wird auf einer Zeichenfläche gemalt, braucht kein Internet */
+function gigCanvas(g){
+  const W=1080,P=72,CW=W-2*P,F='-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif';
+  const c=document.createElement('canvas');c.width=W;c.height=300;
+  const ctx=c.getContext('2d');
+  const set=(sz,wt)=>{ctx.font=(wt||400)+' '+sz+'px '+F;ctx.textBaseline='top'};
+  const wrap=(t,w)=>{
+    const out=[];
+    String(t).split('\n').forEach(par=>{
+      const words=par.split(/\s+/).filter(Boolean);
+      if(!words.length){out.push('');return}
+      let line='';
+      words.forEach(wd=>{const tst=line?line+' '+wd:wd;if(ctx.measureText(tst).width>w&&line){out.push(line);line=wd}else line=tst});
+      out.push(line);
+    });
+    return out;
+  };
+  const title=gigTitle(g),dateTxt=longDate(g.date);
+  const times=(g.times||[]).filter(t=>t.time||t.label);
+  const pieces=g.pieces||[];
+  function run(draw){
+    const txt=(s,x,y,col)=>{if(draw){ctx.fillStyle=col;ctx.fillText(s,x,y)}};
+    set(66,700);const tl=wrap(title,CW);
+    const head=P+34+16+tl.length*78+14+46+Math.round(P*.7);
+    if(draw){ctx.fillStyle='#faf6f1';ctx.fillRect(0,0,W,c.height);ctx.fillStyle='#7a2e3a';ctx.fillRect(0,0,W,head)}
+    let y=P;
+    set(30,700);txt((GTYPES[g.type]||'Auftritt').toUpperCase(),P,y,'#e8c27a');y+=34+16;
+    set(66,700);tl.forEach((l,i)=>txt(l,P,y+i*78,'#ffffff'));y+=tl.length*78+14;
+    set(40,400);txt(dateTxt,P,y,'#f3e3cf');
+    y=head+Math.round(P*.7);
+    const section=n=>{set(28,700);txt(n.toUpperCase(),P,y,'#7a2e3a');y+=28+18};
+    if(times.length){
+      section('Zeiten');
+      times.forEach(t=>{
+        const tt=fmtTime(t.time),x0=tt?P+250:P;
+        set(40,400);const ll=wrap(t.label||'',CW-(x0-P));
+        set(40,700);txt(tt,P,y,'#1d1b1a');
+        set(40,400);ll.forEach((l,i)=>txt(l,x0,y+i*52,'#1d1b1a'));
+        y+=Math.max(1,ll.length)*52+10;
+      });
+      y+=30;
+    }
+    if(g.location){section('Ort');set(40,400);wrap(g.location,CW).forEach(l=>{txt(l,P,y,'#1d1b1a');y+=52});y+=30}
+    if(pieces.length){
+      section('Stücke');
+      pieces.forEach((p,i)=>{
+        set(40,400);const pl=wrap(p,CW-70);
+        set(40,700);txt((i+1)+'.',P,y,'#7a2e3a');
+        set(40,400);pl.forEach((l,k)=>txt(l,P+70,y+k*52,'#1d1b1a'));
+        y+=pl.length*52+10;
+      });
+      y+=30;
+    }
+    if(g.note){section('Hinweise');set(36,400);wrap(g.note,CW).forEach(l=>{txt(l,P,y,'#444444');y+=48});y+=30}
+    return y+Math.round(P*.3);
+  }
+  const H=Math.ceil(run(false));
+  c.height=H;
+  run(true);
+  return c;
+}
+function gigText(g){
+  const L=['*'+gigTitle(g)+'*',longDate(g.date)];
+  (g.times||[]).filter(t=>t.time||t.label).forEach(t=>L.push(timeLine(t)));
+  if(g.location)L.push('Ort: '+g.location);
+  if((g.pieces||[]).length){L.push('','Stücke:');g.pieces.forEach((p,i)=>L.push((i+1)+'. '+p))}
+  if(g.note)L.push('',g.note);
+  return L.join('\n');
+}
+function closeShare(){if(ui.shareImg){try{URL.revokeObjectURL(ui.shareImg.url)}catch(e){}ui.shareImg=null}}
+function makeGigImage(g){
+  const c=gigCanvas(g);
+  c.toBlob(b=>{
+    if(!b){alert('Das Bild konnte nicht erstellt werden.');return}
+    closeShare();
+    ui.shareImg={url:URL.createObjectURL(b),file:new File([b],'auftritt-'+g.date+'.png',{type:'image/png'})};
+    render();
+  },'image/png');
+}
+async function shareFile(){
+  const s=ui.shareImg;if(!s)return;
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[s.file]})){await navigator.share({files:[s.file]});return}
+  }catch(err){if(err&&err.name==='AbortError')return}
+  const a=document.createElement('a');a.href=s.url;a.download=s.file.name;document.body.appendChild(a);a.click();a.remove();
+}
+async function shareGigText(g){
+  const text=gigText(g);
+  try{if(navigator.share){await navigator.share({text});return}}catch(err){if(err&&err.name==='AbortError')return}
+  try{await navigator.clipboard.writeText(text);alert('Text kopiert. Du kannst ihn jetzt in WhatsApp einfügen.')}catch(e){prompt('Text zum Kopieren:',text)}
+}
+const shareOverlay=()=>ui.shareImg?`<div class="overlay"><div class="sheet"><img src="${ui.shareImg.url}" alt="Vorschau des Auftritts">
+  <div class="row" style="margin-top:12px"><button class="btn sp" data-a="doshare">Teilen</button><button class="btn sec" data-a="closeshare">Schließen</button></div>
+  <div class="muted" style="margin-top:10px">„Teilen“ öffnet das iPad-Menü. Wähle dort WhatsApp und dann deine Chorgruppe. Alternativ hältst du das Bild gedrückt und wählst „Zu Fotos hinzufügen“.</div></div></div>`:'';
 
 /* ---------- Mitglieder ---------- */
 function memberForm(m,edit){
@@ -263,11 +432,11 @@ function viewBackup(){
   <div class="card ${old?'warn':''}"><b>Letzte Sicherung:</b> ${lb?fmt(lb):'noch nie'}<div class="muted" style="margin-top:6px">Deine Daten liegen nur auf diesem Gerät. Mache regelmäßig eine Sicherung, zum Beispiel einmal im Monat.</div></div>
   <div class="card"><h2>Sicherung erstellen</h2><div class="muted" style="margin:6px 0 12px">Es öffnet sich das Teilen-Menü. Wähle dort „In Dateien sichern“ oder schicke die Datei per AirDrop oder Mail an dich selbst.</div><button class="btn" data-a="export">Sicherung erstellen</button></div>
   <div class="card"><h2>Sicherung einspielen</h2><div class="muted" style="margin:6px 0 12px">Ersetzt alle Daten auf diesem Gerät durch die der Sicherungsdatei. Damit kannst du die Daten auch auf ein anderes Gerät übertragen.</div><input type="file" data-c="import" accept=".json,application/json"></div>
-  <div class="muted" style="text-align:center;margin-top:20px">${db.members.length} Mitglieder · ${db.events.length} Termine gespeichert</div>`;
+  <div class="muted" style="text-align:center;margin-top:20px">${db.members.length} Mitglieder · ${db.events.length} Termine · ${db.gigs.length} Auftritte gespeichert</div>`;
 }
 function markBackup(){try{localStorage.setItem('chor-backup',today())}catch(e){}}
 async function doExport(){
-  const json=JSON.stringify({app:'chorverwaltung',version:1,exported:new Date().toISOString(),members:db.members,events:db.events},null,1);
+  const json=JSON.stringify({app:'chorverwaltung',version:1,exported:new Date().toISOString(),members:db.members,events:db.events,gigs:db.gigs},null,1);
   const name='chor-sicherung-'+today()+'.json';
   const file=new File([json],name,{type:'application/json'});
   try{
@@ -283,8 +452,8 @@ function doImport(file){
     try{
       const d=JSON.parse(r.result);
       if(!Array.isArray(d.members)||!Array.isArray(d.events))throw 0;
-      if(!confirm(`Alle aktuellen Daten ersetzen durch ${d.members.length} Mitglieder und ${d.events.length} Termine?`))return;
-      db={members:d.members,events:d.events.map(e=>({present:[],pieces:[],title:'',...e}))};save();render();alert('Sicherung eingespielt.');
+      if(!confirm(`Alle aktuellen Daten ersetzen durch ${d.members.length} Mitglieder, ${d.events.length} Termine und ${(d.gigs||[]).length} Auftritte?`))return;
+      db={members:d.members,events:d.events.map(e=>({present:[],pieces:[],title:'',...e})),gigs:(Array.isArray(d.gigs)?d.gigs:[]).map(g=>({title:'',location:'',note:'',times:[],pieces:[],...g}))};save();render();alert('Sicherung eingespielt.');
     }catch(e){alert('Diese Datei ist keine gültige Sicherung.')}
   };
   r.readAsText(file);
@@ -293,8 +462,8 @@ function doImport(file){
 /* ---------- Render & Events ---------- */
 function render(){
   const y=window.scrollY;
-  const v=ui.eventId?viewEvent:{termine:viewTermine,mitglieder:viewMembers,jubilaeen:viewJub,statistik:viewStats,sicherung:viewBackup}[ui.tab];
-  $('#app').innerHTML=v();
+  const v=ui.eventId?viewEvent:ui.gigId?viewGig:{termine:viewTermine,auftritte:viewGigs,mitglieder:viewMembers,jubilaeen:viewJub,statistik:viewStats,sicherung:viewBackup}[ui.tab];
+  $('#app').innerHTML=v()+shareOverlay();
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===ui.tab));
   window.scrollTo(0,y);
   if(ui.focus){const el=$(ui.focus);if(el)el.focus();ui.focus=null}
@@ -302,9 +471,9 @@ function render(){
 
 document.addEventListener('click',ev=>{
   const t=ev.target.closest('[data-t]');
-  if(t){ui.tab=t.dataset.t;ui.eventId=null;ui.showNew=false;ui.editMember=null;window.scrollTo(0,0);render();return}
+  if(t){ui.tab=t.dataset.t;ui.eventId=null;ui.showNew=false;ui.editMember=null;ui.gigId=null;ui.showNewGig=false;closeShare();window.scrollTo(0,0);render();return}
   const b=ev.target.closest('[data-a]');if(!b)return;
-  const a=b.dataset.a,id=b.dataset.id,e=getEvent();
+  const a=b.dataset.a,id=b.dataset.id,e=getEvent(),g=getGig();
   if(a==='new'){ui.showNew=true}
   else if(a==='cancelnew'){ui.showNew=false}
   else if(a==='create'){
@@ -339,11 +508,32 @@ document.addEventListener('click',ev=>{
     if(ui.editMember===id)ui.editMember=null;
     db.members=db.members.filter(x=>x.id!==id);db.events.forEach(x=>x.present=x.present.filter(p=>p!==id));save();
   }
+  else if(a==='newgig'){ui.showNewGig=true}
+  else if(a==='cancelnewgig'){ui.showNewGig=false}
+  else if(a==='creategig'){
+    const date=$('#gDate').value;if(!date){alert('Bitte ein Datum wählen.');return}
+    const n={id:uid(),type:$('#gType').value,title:$('#gTitle').value.trim(),date,location:'',times:[],pieces:[],note:''};
+    db.gigs.push(n);save();ui.gigId=n.id;ui.showNewGig=false;window.scrollTo(0,0);
+  }
+  else if(a==='opengig'){ui.gigId=id;window.scrollTo(0,0)}
+  else if(a==='backgig'){ui.gigId=null;window.scrollTo(0,0)}
+  else if(a==='addtime'&&g){g.times.push({time:'',label:''});save()}
+  else if(a==='deltime'&&g){g.times.splice(+b.dataset.i,1);save()}
+  else if(a==='addgpiece'&&g){const p=$('#gpInput').value.trim();if(!p)return;g.pieces.push(p);save();ui.focus='#gpInput'}
+  else if(a==='delgpiece'&&g){g.pieces.splice(+b.dataset.i,1);save()}
+  else if(a==='upgpiece'&&g){const i=+b.dataset.i;if(i>0){[g.pieces[i-1],g.pieces[i]]=[g.pieces[i],g.pieces[i-1]];save()}}
+  else if(a==='downgpiece'&&g){const i=+b.dataset.i;if(i<g.pieces.length-1){[g.pieces[i+1],g.pieces[i]]=[g.pieces[i],g.pieces[i+1]];save()}}
+  else if(a==='delgig'&&g){if(!confirm('Diesen Auftritt wirklich löschen?'))return;db.gigs=db.gigs.filter(x=>x.id!==g.id);save();ui.gigId=null}
+  else if(a==='gigimg'&&g){makeGigImage(g);return}
+  else if(a==='gigtxt'&&g){shareGigText(g);return}
+  else if(a==='doshare'){shareFile();return}
+  else if(a==='closeshare'){closeShare()}
   else if(a==='export'){doExport();return}
   render();
 });
 document.addEventListener('change',ev=>{
   const c=ev.target.dataset.c;if(!c)return;
+  if(applyGigField(ev.target))return;
   const e=getEvent();
   if(c==='year'){ui.year=+ev.target.value}
   else if(c==='evdate'&&e){if(ev.target.value){e.date=ev.target.value;ui.year=+e.date.slice(0,4);save()}}
@@ -352,8 +542,15 @@ document.addEventListener('change',ev=>{
   else if(c==='import'){doImport(ev.target.files[0]);return}
   render();
 });
+// Eingaben sofort speichern (ohne Neuzeichnen), damit nichts verloren geht, wenn gleich danach geteilt wird
+document.addEventListener('input',ev=>{
+  const el=ev.target;if(!el.dataset||!el.dataset.c)return;
+  if(applyGigField(el))return;
+  if(el.dataset.c==='evtitle'){const e=getEvent();if(e){e.title=el.value;save()}}
+});
 document.addEventListener('keydown',ev=>{
   if(ev.key!=='Enter')return;
+  if(ev.target.id==='gpInput')document.querySelector('[data-a="addgpiece"]').click();
   if(ev.target.id==='mName'){const btn=document.querySelector('[data-a="addmember"],[data-a="savemember"]');if(btn)btn.click()}
   if(ev.target.id==='pInput')document.querySelector('[data-a="addpiece"]').click();
 });
