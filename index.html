@@ -88,9 +88,10 @@ tr.r1 td:last-child,tr.r2 td:last-child,tr.r3 td:last-child{border-radius:0 8px 
 .lt{font-size:15px;font-weight:700;color:var(--acc);margin:14px 4px 0}
 .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
 .filters input,.filters select{width:100%;min-width:0}
-.play{display:grid;grid-template-columns:150px minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
-.play input{width:100%;min-width:0}
-@media(max-width:560px){.play{grid-template-columns:minmax(0,1fr) auto}.play input[type=date]{grid-column:1/-1}}
+.play{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.play input{display:block;width:100%;min-width:0;max-width:100%}
+.play input[type=date]{max-width:260px}
+.play .occ{grid-column:1/-1}
 @media(max-width:430px){nav button{font-size:9.5px}nav button span{font-size:20px}}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:50;overflow:auto;padding:max(16px,env(safe-area-inset-top)) 16px 24px}
 .sheet{max-width:560px;margin:0 auto;background:var(--card);border-radius:16px;padding:14px}
@@ -528,12 +529,12 @@ function pieceForm(){
   </div>
   <datalist id="compList">${composers().map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
   ${ui.pfMsg?`<div style="margin-bottom:10px;color:var(--on);font-weight:600">✓ ${esc(ui.pfMsg)}</div>`:''}
-  <div class="row"><button class="btn" data-a="addrep">Hinzufügen</button><button class="btn sec" data-a="closerep">Fertig</button></div></div>`;
+  <div class="row"><button class="btn" data-a="addrep">Hinzufügen</button><button class="btn sec" data-a="closerep">Abbrechen</button></div></div>`;
 }
 function viewRep(){
   const comps=composers();
   const noComp=db.pieces.some(p=>!(p.composer||'').trim());
-  let h=`<h1>Repertoire</h1><div class="muted">Alle Stücke, die der Chor singt oder gesungen hat.</div>`;
+  let h=`<h1>Repertoire</h1><div class="muted">Eine Liste aller Stücke des Chores</div>`;
   h+=ui.showNewPiece?pieceForm():`<button class="btn wide" data-a="newrep">+ Neues Stück</button>`;
   h+=`<div class="card"><div class="filters">
     <input data-c="rq" placeholder="Titel suchen" value="${esc(ui.rf.q)}" autocomplete="off">
@@ -556,9 +557,9 @@ function viewPiece(){
   </div><datalist id="compList">${composers().map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
   <div class="card"><h2>Gesungen</h2>
     <div class="muted" style="margin:4px 0 8px">${plays.length?`${plays.length}× gesungen, zuletzt am ${fmtD(plays[0].date)}`:'Noch nicht eingetragen, wann und wozu dieses Stück gesungen wurde.'}</div>
-    ${plays.map(x=>`<div class="play"><input type="date" data-c="pld" data-id="${x.id}" value="${x.date}"><input data-c="plo" data-id="${x.id}" list="occList" value="${esc(x.occasion)}" placeholder="Anlass" autocomplete="off"><button class="btn danger small" data-a="delplay" data-id="${x.id}">✕</button></div>`).join('')}
+    ${plays.map(x=>`<div class="play"><input type="date" data-c="pld" data-id="${x.id}" value="${x.date}"><button class="btn danger small" data-a="delplay" data-id="${x.id}">✕</button><input class="occ" data-c="plo" data-id="${x.id}" list="occList" value="${esc(x.occasion)}" placeholder="Anlass" autocomplete="off"></div>`).join('')}
     <div style="margin-top:14px"><div class="muted">Neu eintragen</div>
-      <div class="play" style="border:0;padding-bottom:0"><input type="date" id="plDate" value="${today()}"><input id="plOcc" list="occList" placeholder="Anlass, z. B. Adventskonzert" autocomplete="off"><button class="btn" data-a="addplay">Hinzufügen</button></div>
+      <div class="play" style="border:0;padding-bottom:0"><input type="date" id="plDate" value="${today()}"><span></span><input class="occ" id="plOcc" list="occList" placeholder="Anlass" autocomplete="off"><button class="btn occ" data-a="addplay">Hinzufügen</button></div>
       ${gigs.length?`<select data-c="plgig" style="width:100%;margin-top:8px"><option value="">Aus einem Auftritt übernehmen …</option>${gigs.map(g=>`<option value="${g.id}">${fmtD(g.date)} · ${esc(gigTitle(g))}</option>`).join('')}</select>`:''}
       <datalist id="occList">${occ.map(o=>`<option value="${esc(o)}">`).join('')}</datalist></div></div>
   <button class="btn danger wide" data-a="delrep">Stück löschen</button>`;
@@ -833,13 +834,13 @@ document.addEventListener('click',ev=>{
   else if(a==='doshare'){shareFile();return}
   else if(a==='closeshare'){closeShare()}
   else if(a==='newrep'){ui.showNewPiece=true;ui.pfMsg='';ui.focus='#pTitle'}
-  else if(a==='closerep'){ui.showNewPiece=false;ui.pfMsg=''}
+  else if(a==='closerep'){ui.showNewPiece=false;ui.pfMsg='';ui.pf={title:'',composer:'',extra:'',cat:'Allgemein'}}
   else if(a==='addrep'){
     const f={title:$('#pTitle').value.trim(),composer:$('#pComp').value.trim(),extra:$('#pExtra').value.trim(),cat:$('#pCat').value||'Allgemein'};
     if(!f.title){alert('Bitte einen Titel eingeben.');return}
     if(db.pieces.some(p=>same(p.title,f.title)&&same(p.composer,f.composer)&&same(p.extra,f.extra))&&!confirm('Dieses Stück gibt es schon im Repertoire. Trotzdem noch einmal anlegen?'))return;
     db.pieces.push(normPiece({id:uid(),title:f.title,composer:f.composer,extra:f.extra,cat:f.cat}));save();
-    ui.pfMsg='„'+f.title+'“ gespeichert';ui.pf={title:'',composer:f.composer,extra:'',cat:f.cat};ui.focus='#pTitle';
+    ui.pfMsg='';ui.pf={title:'',composer:'',extra:'',cat:'Allgemein'};ui.showNewPiece=false;
   }
   else if(a==='openrep'){ui.pieceId=id;window.scrollTo(0,0)}
   else if(a==='backrep'){ui.pieceId=null;window.scrollTo(0,0)}
