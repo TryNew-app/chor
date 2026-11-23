@@ -12,8 +12,8 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Chorverwaltung</title>
 <style>
-:root{--fh:52px;--bg:#f4f1ee;--card:#fff;--fg:#1d1b1a;--mute:#76706b;--acc:#7a2e3a;--line:#e3ddd8;--on:#2f7d4f;--danger:#c0392b;--hl:#fff0cf;--hlb:#e0a030;--g1:#ffe49a;--g2:#e4e8ee;--g3:#f4d3b4}
-@media(prefers-color-scheme:dark){:root{--bg:#161413;--card:#232020;--fg:#f1ece8;--mute:#a39b95;--acc:#c9586a;--line:#38332f;--on:#3a9a62;--danger:#e5675a;--hl:#4a3a18;--hlb:#d9a441;--g1:#5c4a14;--g2:#3d424a;--g3:#583c25}}
+:root{--fh:52px;--bg:#f4f1ee;--card:#fff;--fg:#1d1b1a;--mute:#76706b;--acc:#7a2e3a;--line:#e3ddd8;--on:#2f7d4f;--danger:#c0392b;--hl:#fff0cf;--hlb:#e0a030;--g1:#ffe49a;--g2:#e4e8ee;--g3:#f4d3b4;--abs:#fff1b8;--absb:#e5c964;--away:#f5cfca;--awayb:#e0958c;--und:#d9e4f2;--undb:#9db5d3}
+@media(prefers-color-scheme:dark){:root{--bg:#161413;--card:#232020;--fg:#f1ece8;--mute:#a39b95;--acc:#c9586a;--line:#38332f;--on:#3a9a62;--danger:#e5675a;--hl:#4a3a18;--hlb:#d9a441;--g1:#5c4a14;--g2:#3d424a;--g3:#583c25;--abs:#4f4318;--absb:#8a7424;--away:#5a2b28;--awayb:#8f4a44;--und:#2f3d50;--undb:#52708f}}
 *{box-sizing:border-box}
 body{margin:0;font:17px/1.4 -apple-system,system-ui,sans-serif;background:var(--bg);color:var(--fg);padding-bottom:calc(92px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%}
 #app{max-width:900px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) 16px 16px}
@@ -42,7 +42,7 @@ nav button.on{background:var(--acc);color:#fff;font-weight:600}
 .dot{display:none;position:absolute;top:1px;left:calc(50% + 9px);width:13px;height:13px;border-radius:50%;background:#ff3b30;border:2px solid #fff}
 .dot.on{display:block}
 .dotin{display:inline-block;width:11px;height:11px;border-radius:50%;background:#ff3b30;margin-right:6px}
-.ev{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:inherit;background:var(--card);border:0;border-radius:14px;padding:14px 16px;margin:8px 0;min-height:64px}
+.ev{display:flex;flex-wrap:wrap;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:inherit;background:var(--card);border:0;border-radius:14px;padding:14px 16px;margin:8px 0;min-height:64px}
 .ev .box{width:28px;height:28px;flex:none;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center;color:transparent;font-size:18px}
 .ev.on .box{background:var(--on);border-color:var(--on);color:#fff}
 .badge{display:inline-block;font-size:13px;padding:2px 10px;border-radius:99px;background:var(--bg);color:var(--mute);border:1px solid var(--line)}
@@ -55,6 +55,15 @@ nav button.on{background:var(--acc);color:#fff;font-weight:600}
 .chip .tt{display:inline-block;white-space:nowrap}
 .chip.on{background:var(--on);border-color:var(--on);color:#fff}
 .chip.on .ck{visibility:visible}
+.chip.st .ck{visibility:visible}
+.chip.abs{background:var(--abs);border-color:var(--absb)}
+.chip.away{background:var(--away);border-color:var(--awayb)}
+.chip.und{background:var(--und);border-color:var(--undb)}
+.ev.cx{opacity:.55}
+.ev.cx b{text-decoration:line-through}
+.vgrid{flex:0 0 100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;text-align:center;border-top:1px solid var(--line);padding-top:8px}
+.vgrid .vh{font-size:13px;color:var(--mute)}
+.vgrid b{font-size:17px}
 .count b{font-size:30px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .grid .card{margin:0}
@@ -108,7 +117,7 @@ tr.r1 td:last-child,tr.r2 td:last-child,tr.r3 td:last-child{border-radius:0 8px 
 <body>
 <div id="app"></div>
 <nav>
-  <button data-t="termine"><span>📅</span>Termine</button>
+  <button data-t="proben"><span>📅</span>Proben</button>
   <button data-t="statistik"><span>📊</span>Statistik</button>
   <button data-t="auftritte"><span>🎤</span>Auftritte</button>
   <button data-t="repertoire"><span>📖</span>Repertoire</button>
@@ -143,14 +152,15 @@ function normMember(m){
   m.name=(m.first+' '+m.last).trim();
   return m;
 }
-const normGig=g=>({title:'',location:'',note:'',times:[],pieces:[],...g});
+const normGig=g=>{const n={title:'',location:'',note:'',times:[],pieces:[],present:[],undecided:[],...g};if(!Array.isArray(n.present))n.present=[];if(!Array.isArray(n.undecided))n.undecided=[];return n};
+const normEvent=e=>{const n={present:[],away:[],pieces:[],title:'',type:'probe',cancelled:false,...e};if(!Array.isArray(n.present))n.present=[];if(!Array.isArray(n.away))n.away=[];if(!Array.isArray(n.pieces))n.pieces=[];n.cancelled=!!n.cancelled;return n};
 const CATS=['Allgemein','Weihnachten','Ostern','Karfreitag','Pfingsten','Gospel'];
 const normPiece=p=>{const n={title:'',composer:'',extra:'',cat:'Allgemein',...p};if(!Array.isArray(n.plays))n.plays=[];if(!n.cat)n.cat='Allgemein';return n};
 
-function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&Array.isArray(d.members)&&Array.isArray(d.events)){d.members.forEach(normMember);d.gigs=(Array.isArray(d.gigs)?d.gigs:[]).map(normGig);d.pieces=(Array.isArray(d.pieces)?d.pieces:[]).map(normPiece);return d}}catch(e){}return{members:[],events:[],gigs:[],pieces:[]}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&Array.isArray(d.members)&&Array.isArray(d.events)){d.members.forEach(normMember);d.events=d.events.map(normEvent);d.gigs=(Array.isArray(d.gigs)?d.gigs:[]).map(normGig);d.pieces=(Array.isArray(d.pieces)?d.pieces:[]).map(normPiece);return d}}catch(e){}return{members:[],events:[],gigs:[],pieces:[]}}
 let db=load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert('Speichern ist fehlgeschlagen. Bitte mache eine Sicherung.')}}
-let ui={tab:'termine',year:new Date().getFullYear(),eventId:null,showNew:false,editMember:null,showNewMember:false,gigId:null,showNewGig:false,listMode:false,listSel:[],listPieces:false,listTitle:'Termine Jakobuschor',pieceId:null,showNewPiece:false,pf:{title:'',composer:'',extra:'',cat:'Allgemein'},pfMsg:'',rf:{q:'',composer:'',cat:''},shareImg:null,lastVoice:'Sopran',focus:null};
+let ui={tab:'proben',year:new Date().getFullYear(),eventId:null,showNew:false,showBulk:false,bulkYear:new Date().getFullYear()+(new Date().getMonth()>=8?1:0),editMember:null,showNewMember:false,gigId:null,showNewGig:false,listMode:false,listSel:[],listPieces:false,listTitle:'Termine Jakobuschor',pieceId:null,showNewPiece:false,pf:{title:'',composer:'',extra:'',cat:'Allgemein'},pfMsg:'',rf:{q:'',composer:'',cat:''},shareImg:null,lastVoice:'Sopran',focus:null};
 
 const isFormer=m=>!!m.left&&m.left<=today();
 const inChoir=(m,d)=>(!m.joined||m.joined<=d)&&(!m.left||d<=m.left);
@@ -160,9 +170,16 @@ const getGig=()=>db.gigs.find(g=>g.id===ui.gigId);
 const getPiece=()=>db.pieces.find(p=>p.id===ui.pieceId);
 const presentCount=e=>e.present.filter(id=>db.members.some(m=>m.id===id)).length;
 const presentOfVoice=(e,v)=>e.present.filter(id=>{const m=db.members.find(x=>x.id===id);return m&&m.voice===v}).length;
-function years(){const s=new Set([new Date().getFullYear()]);db.events.forEach(e=>s.add(+e.date.slice(0,4)));return[...s].sort((a,b)=>b-a)}
+function years(){const s=new Set([new Date().getFullYear(),ui.year]);db.events.forEach(e=>s.add(+e.date.slice(0,4)));db.gigs.forEach(g=>s.add(+g.date.slice(0,4)));return[...s].sort((a,b)=>b-a)}
 const yearSelect=()=>`<select data-c="year" aria-label="Jahr">${years().map(v=>`<option ${v==ui.year?'selected':''}>${v}</option>`).join('')}</select>`;
-const typeOptions=sel=>Object.entries(TYPES).map(([k,l])=>`<option value="${k}" ${k===sel?'selected':''}>${l}</option>`).join('');
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const WEEKDAYS=[['1','Montag'],['2','Dienstag'],['3','Mittwoch'],['4','Donnerstag'],['5','Freitag'],['6','Samstag'],['0','Sonntag']];
+const isProbe=e=>e.type==='probe';
+const isGig=e=>Array.isArray(e.undecided);
+/* Drei Zustände pro Sänger: anwesend (present), abgemeldet bzw. unentschieden (other), sonst abwesend */
+const awayList=e=>isGig(e)?e.undecided:e.away;
+const pcount=(e,v,list)=>list.filter(id=>{const m=db.members.find(x=>x.id===id);return m&&m.voice===v}).length;
+const voiceCount=(e,v,list)=>{const p=pcount(e,v,e.present),o=pcount(e,v,list),tot=eligibleFor(e,v).length;return p+'/'+tot+(o?' ('+o+')':'')};
 
 /* ---------- Datums-Helfer ---------- */
 const startOfToday=()=>{const d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate())};
@@ -195,46 +212,99 @@ function recentBirthdays(){ // Geburtstage heute und in den letzten 7 Tagen
 }
 const spanText=s=>s.y===0?`${s.m} Monate`:`${s.y} Jahre${s.m?`, ${s.m} Monat${s.m>1?'e':''}`:''}`;
 
-/* ---------- Termine ---------- */
-function viewTermine(){
-  const y=String(ui.year);
-  const ev=db.events.filter(e=>e.date.startsWith(y)).sort((a,b)=>b.date.localeCompare(a.date));
-  const c=t=>ev.filter(e=>e.type===t).length;
-  let h=`<div class="row"><h1 class="sp">Termine</h1>${yearSelect()}</div>`;
-  h+=`<div class="muted">${y}: ${c('probe')} Proben · ${c('konzert')} Konzerte · ${c('gottesdienst')} Gottesdienste · ${ev.length} gesamt</div>`;
+/* ---------- Proben ---------- */
+const eligibleFor=(e,v)=>db.members.filter(m=>m.voice===v&&((m.active!==false&&inChoir(m,e.date))||e.present.includes(m.id)||awayList(e).includes(m.id))).sort(byName);
+const awayCount=e=>e.away.filter(id=>db.members.some(m=>m.id===id)).length;
+function probeRow(e){
+  const away=awayCount(e);
+  const sub=[esc(e.title)||'',!e.cancelled&&away?away+' abgemeldet':''].filter(Boolean).join(' · ');
+  return `<button class="ev ${e.cancelled?'cx':''}" data-a="open" data-id="${e.id}">
+    <div class="sp"><div><b>${fmt(e.date)}</b></div><div class="muted">${sub}</div></div>
+    ${e.cancelled?'<span class="badge">entfällt</span>':`<b style="min-width:70px;text-align:right">${presentCount(e)} 👥</b>`}</button>`;
+}
+function viewProben(){
+  const y=String(ui.year),t=today();
+  const all=db.events.filter(e=>e.date.startsWith(y));
+  const pr=all.filter(isProbe).sort((a,b)=>a.date.localeCompare(b.date));
+  const up=pr.filter(e=>e.date>=t);
+  const past=pr.filter(e=>e.date<t).reverse(); // jüngste zuerst
+  const old=all.filter(e=>!isProbe(e)).sort((a,b)=>b.date.localeCompare(a.date));
+  const held=pr.filter(e=>e.date<=t&&!e.cancelled).length;
+  const ahead=pr.filter(e=>e.date>t&&!e.cancelled).length;
+  const cx=pr.filter(e=>e.cancelled).length;
+  let h=`<div class="row"><h1 class="sp">Proben</h1>${yearSelect()}</div>`;
+  h+=`<div class="muted">${y}: ${held} Proben bis heute · ${ahead} weitere geplant · ${cx} entfallen</div>`;
   if(!db.members.length)h+=`<div class="card">Tipp: Lege zuerst unter „Mitglieder“ deine Sängerinnen und Sänger an.</div>`;
   if(ui.showNew){
-    h+=`<div class="card"><h2>Neuer Termin</h2>
-      <div class="row" style="margin:10px 0"><input type="date" id="nDate" value="${today()}"><select id="nType">${typeOptions('probe')}</select></div>
-      <input id="nTitle" placeholder="Titel oder Ort (optional)" autocomplete="off">
+    h+=`<div class="card"><h2>Neue Probe</h2>
+      <div class="row" style="margin:10px 0"><input type="date" id="nDate" value="${today()}"></div>
+      <input id="nTitle" placeholder="Bemerkung (optional)" autocomplete="off">
       <div class="row" style="margin-top:12px"><button class="btn" data-a="create">Anlegen</button><button class="btn sec" data-a="cancelnew">Abbrechen</button></div></div>`;
-  }else h+=`<button class="btn wide" data-a="new">+ Neuer Termin</button>`;
-  if(!ev.length)h+=`<div class="muted" style="margin-top:16px">Noch keine Termine in ${y}.</div>`;
-  h+=ev.map(e=>`<button class="ev" data-a="open" data-id="${e.id}">
-    <div class="sp"><div><b>${fmt(e.date)}</b></div><div class="muted">${esc(e.title)||''}${e.pieces.length?` · ${e.pieces.length} Stück${e.pieces.length>1?'e':''}`:''}</div></div>
-    <span class="badge ${e.type}">${TYPES[e.type]}</span><b style="min-width:70px;text-align:right">${presentCount(e)} 👥</b></button>`).join('');
+  }else if(ui.showBulk){
+    h+=`<div class="card"><h2>Proben für ein ganzes Jahr anlegen</h2>
+      <div class="muted" style="margin:6px 0 10px">Für jeden gewählten Wochentag im Jahr wird eine Probe angelegt. Tage, an denen es schon eine Probe gibt, werden übersprungen.</div>
+      <div class="row" style="margin-bottom:12px"><input type="number" id="bYear" inputmode="numeric" min="2000" max="2100" value="${ui.bulkYear}" style="width:110px"><select id="bDay">${WEEKDAYS.map(([k,l])=>`<option value="${k}" ${k==='5'?'selected':''}>${l}</option>`).join('')}</select></div>
+      <div class="row"><button class="btn" data-a="dobulk">Proben anlegen</button><button class="btn sec" data-a="cancelbulk">Abbrechen</button></div></div>`;
+  }else h+=`<div class="row" style="margin:12px 0"><button class="btn sp" data-a="new">+ Neue Probe</button><button class="btn sec" data-a="bulk">Ganzes Jahr anlegen</button></div>`;
+  if(!pr.length)h+=`<div class="muted" style="margin-top:16px">Noch keine Proben in ${y}.</div>`;
+  if(up.length)h+=`<h2 style="margin-top:18px">Anstehend</h2>`+up.map(probeRow).join('');
+  if(past.length)h+=`<h2 style="margin-top:18px">Vergangen</h2>`+past.map(probeRow).join('');
+  if(old.length)h+=`<h2 style="margin-top:22px">Alte Einträge</h2><div class="muted">Früher unter „Termine“ eingetragene Konzerte und Gottesdienste. Sie zählen nicht in der Statistik. Lege sie unter „Auftritte“ neu an und lösche sie danach hier.</div>`+
+    old.map(e=>`<button class="ev" data-a="open" data-id="${e.id}"><div class="sp"><div><b>${fmt(e.date)}</b></div><div class="muted">${esc(e.title)||''}</div></div><span class="badge ${e.type}">${TYPES[e.type]||''}</span><b style="min-width:70px;text-align:right">${presentCount(e)} 👥</b></button>`).join('');
   return h;
 }
 
-const eligibleFor=(e,v)=>db.members.filter(m=>m.voice===v&&((m.active!==false&&inChoir(m,e.date))||e.present.includes(m.id))).sort(byName);
+/* Ein Sänger als Feld: ✓ anwesend (grün), ○ abwesend (gelb), ✗ abgemeldet (rot, nur Proben), ? unentschieden (blau, nur Auftritte) */
+function memberChip(m,e,act){
+  const s=e.present.includes(m.id)?'on':awayList(e).includes(m.id)?(isGig(e)?'und':'away'):'abs';
+  const sym={on:'✓',abs:'○',away:'✗',und:'?'}[s];
+  return `<button class="chip st ${s}" data-a="${act}" data-id="${m.id}"><span class="ck">${sym}</span><span class="t"><span class="tt">${esc(dn(m))}</span></span></button>`;
+}
+function voiceSections(e,tg,al,no){
+  const gig=isGig(e);let h='';
+  for(const v of VOICES){
+    const ms=eligibleFor(e,v),o=pcount(e,v,awayList(e));
+    h+=`<div class="row" style="margin-top:14px"><h2 class="sp">${v} <span class="muted">${presentOfVoice(e,v)}/${ms.length}${o?(gig?` (${o})`:` · ${o} abgemeldet`):''}</span></h2>
+      <button class="btn sec small" data-a="${al}" data-v="${v}">alle</button><button class="btn sec small" data-a="${no}" data-v="${v}">keine</button></div>`;
+    h+=ms.length?`<div class="chips">${ms.map(m=>memberChip(m,e,tg)).join('')}</div>`:`<div class="muted" style="margin:6px 0 12px">Keine Mitglieder in dieser Stimme.</div>`;
+  }
+  return h;
+}
+/* Reihum tippen: abwesend → anwesend → abgemeldet (Proben) bzw. unentschieden (Auftritte) → abwesend */
+function cycle(e,id){
+  const L=awayList(e);
+  if(e.present.includes(id)){e.present=e.present.filter(x=>x!==id);L.push(id)}
+  else if(L.includes(id))L.splice(L.indexOf(id),1);
+  else e.present.push(id);
+}
+function setAll(e,v){
+  const L=awayList(e),gig=isGig(e);
+  const ids=db.members.filter(m=>m.voice===v&&m.active!==false&&inChoir(m,e.date)&&(gig||!L.includes(m.id))).map(m=>m.id);
+  e.present=[...new Set([...e.present,...ids])];
+  if(gig){const s=new Set(ids);L.splice(0,L.length,...L.filter(x=>!s.has(x)))}
+}
+function setNone(e,v){
+  const ids=new Set(db.members.filter(m=>m.voice===v).map(m=>m.id));
+  e.present=e.present.filter(x=>!ids.has(x));
+}
 function viewEvent(){
-  const e=getEvent();if(!e){ui.eventId=null;return viewTermine()}
-  const pres=new Set(e.present);
+  const e=getEvent();if(!e){ui.eventId=null;return viewProben()}
+  const probe=isProbe(e),awayN=awayCount(e);
   const allPieces=[...new Set([...db.events.flatMap(x=>x.pieces),...db.pieces.map(p=>p.title).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'de'));
   let h=`<button class="btn sec small" data-a="back">‹ Zurück</button>
-  <div class="card"><div class="row" style="margin-bottom:10px"><select data-c="evtype">${typeOptions(e.type)}</select><input type="date" data-c="evdate" value="${e.date}"></div>
-  <input data-c="evtitle" placeholder="Titel oder Ort (optional)" value="${esc(e.title)}" autocomplete="off"></div>
-  <div class="card count"><b>${presentCount(e)}</b> anwesend<div class="muted">${VOICES.map(v=>v+' '+presentOfVoice(e,v)).join(' · ')}</div></div>`;
-  for(const v of VOICES){
-    const ms=eligibleFor(e,v);
-    h+=`<div class="row" style="margin-top:14px"><h2 class="sp">${v} <span class="muted">${presentOfVoice(e,v)}/${ms.length}</span></h2>
-      <button class="btn sec small" data-a="all" data-v="${v}">alle</button><button class="btn sec small" data-a="none" data-v="${v}">keine</button></div>`;
-    h+=ms.length?`<div class="chips">${ms.map(m=>`<button class="chip ${pres.has(m.id)?'on':''}" data-a="toggle" data-id="${m.id}"><span class="ck">✓</span><span class="t"><span class="tt">${esc(dn(m))}</span></span></button>`).join('')}</div>`:`<div class="muted" style="margin:6px 0 12px">Keine Mitglieder in dieser Stimme.</div>`;
+  <div class="card"><div class="row" style="margin-bottom:10px"><span class="badge ${probe?'':e.type}">${probe?'Probe':(TYPES[e.type]||'')}</span><input type="date" data-c="evdate" value="${e.date}"></div>
+  <input data-c="evtitle" placeholder="${probe?'Bemerkung, z. B. Sommerferien':'Titel oder Ort (optional)'}" value="${esc(e.title)}" autocomplete="off">
+  ${probe?`<div class="chips" style="margin:12px 0 0"><button class="chip ${e.cancelled?'st away':''}" data-a="togglecancel"><span class="ck">✗</span><span class="t"><span class="tt">Probe ist entfallen</span></span></button></div>`:`<div class="muted" style="margin-top:10px">Alter Eintrag. Er zählt nicht in der Statistik. Konzerte und Gottesdienste legst du unter „Auftritte“ an.</div>`}</div>`;
+  if(e.cancelled){
+    h+=`<div class="card muted">Diese Probe ist entfallen und zählt nicht in der Statistik. Die Bemerkung oben dient als Grund.</div>`;
+  }else{
+    h+=`<div class="card count"><b>${presentCount(e)}</b> anwesend${awayN?` · ${awayN} abgemeldet`:''}<div class="muted">${VOICES.map(v=>v+' '+presentOfVoice(e,v)).join(' · ')}</div></div>`;
+    h+=voiceSections(e,'toggle','all','none');
   }
-  h+=`<div class="card"><h2>${e.type==='probe'?'Geprobte Stücke':'Gesungene Stücke'}</h2>
+  if(!probe)h+=`<div class="card"><h2>Gesungene Stücke</h2>
     ${e.pieces.map((p,i)=>`<div class="piece"><span>${esc(p)}</span><button class="btn danger small" data-a="delpiece" data-i="${i}">✕</button></div>`).join('')}
-    <div class="row" style="margin-top:10px"><input id="pInput" class="sp" list="pList" placeholder="Stück hinzufügen" autocomplete="off"><datalist id="pList">${allPieces.map(p=>`<option value="${esc(p)}">`).join('')}</datalist><button class="btn" data-a="addpiece">Hinzufügen</button></div></div>
-  <button class="btn danger wide" data-a="delevent">Termin löschen</button>`;
+    <div class="row" style="margin-top:10px"><input id="pInput" class="sp" list="pList" placeholder="Stück hinzufügen" autocomplete="off"><datalist id="pList">${allPieces.map(p=>`<option value="${esc(p)}">`).join('')}</datalist><button class="btn" data-a="addpiece">Hinzufügen</button></div></div>`;
+  h+=`<button class="btn danger wide" data-a="delevent">${probe?'Probe löschen':'Eintrag löschen'}</button>`;
   return h;
 }
 
@@ -265,7 +335,8 @@ const listGigs=()=>db.gigs.filter(g=>ui.listSel.includes(g.id)).sort((a,b)=>a.da
 function gigCard(g){
   return `<button class="ev" data-a="opengig" data-id="${g.id}">
     <div class="sp"><div><b>${esc(gigTitle(g))}</b></div><div class="muted">${fmt(g.date)}${g.location?' · '+esc(g.location):''}</div></div>
-    <span class="badge ${g.type}">${GTYPES[g.type]||'Sonstiges'}</span></button>`;
+    <span class="badge ${g.type}">${GTYPES[g.type]||'Sonstiges'}</span>
+    <div class="vgrid">${VOICES.map(v=>`<span class="vh">${v}</span>`).join('')}${VOICES.map(v=>`<b>${voiceCount(g,v,g.undecided)}</b>`).join('')}</div></button>`;
 }
 function viewGigs(){
   if(ui.listMode)return viewGigList();
@@ -309,6 +380,8 @@ function viewGig(){
     <div class="row" style="margin-bottom:10px"><select data-c="gtype">${Object.entries(GTYPES).map(([k,l])=>`<option value="${k}" ${k===g.type?'selected':''}>${l}</option>`).join('')}</select><input type="date" data-c="gdate" value="${g.date}"></div>
     <input data-c="gtitle" placeholder="Titel" value="${esc(g.title)}" autocomplete="off">
   </div>
+  <div class="card count"><b>${g.present.filter(id=>db.members.some(m=>m.id===id)).length}</b> anwesend${g.undecided.length?` · ${g.undecided.filter(id=>db.members.some(m=>m.id===id)).length} unentschieden`:''}<div class="muted">Tippen: ○ abwesend, ✓ anwesend, ? unentschieden</div></div>
+  ${voiceSections(g,'gtoggle','gall','gnone')}
   <div class="card"><h2>Zeiten</h2>
     ${g.times.map((t,i)=>`<div class="row" style="margin-top:10px"><input type="time" data-c="gtime" data-i="${i}" value="${esc(t.time)}"><input class="sp" data-c="glabel" data-i="${i}" list="lList" placeholder="z. B. Einsingen" value="${esc(t.label)}" autocomplete="off"><button class="btn danger small" data-a="deltime" data-i="${i}">✕</button></div>`).join('')}
     <datalist id="lList">${LABELS.map(l=>`<option value="${l}">`).join('')}</datalist>
@@ -690,16 +763,19 @@ function viewJub(){
 /* ---------- Statistik ---------- */
 function viewStats(){
   const y=String(ui.year);
-  const ev=db.events.filter(e=>e.date.startsWith(y));
-  const pr=ev.filter(e=>e.type==='probe');
+  const t=today();
+  // Es zählt nur, was schon stattgefunden hat (Datum bis einschließlich heute); entfallene Proben zählen nicht
+  const pr=db.events.filter(e=>isProbe(e)&&!e.cancelled&&e.date.startsWith(y)&&e.date<=t);
+  const gg=db.gigs.filter(g=>g.date.startsWith(y)&&g.date<=t);
   const prAvg=avg(pr.map(presentCount));
   // Wer zählt bei einer Probe mit? Aktive Mitglieder, die an dem Tag im Chor waren, dazu jeder, der anwesend war.
   const elig=e=>db.members.filter(m=>(m.active!==false&&inChoir(m,e.date))||e.present.includes(m.id));
   const slots=pr.reduce((s,e)=>s+elig(e).length,0);
   const got=pr.reduce((s,e)=>s+presentCount(e),0);
-  const c=t=>ev.filter(e=>e.type===t).length;
+  const c=ty=>gg.filter(g=>g.type===ty).length;
   let h=`<div class="row"><h1 class="sp">Statistik</h1>${yearSelect()}</div>`;
-  h+=`<div class="grid">`+[['Proben',c('probe')],['Konzerte',c('konzert')],['Gottesdienste',c('gottesdienst')],['Gesamt',ev.length]].map(([l,n])=>`<div class="card"><div class="muted">${l} ${y}</div><div class="big">${n}</div></div>`).join('')+`</div>`;
+  h+=`<div class="muted">Es zählen nur Proben und Auftritte, die bis heute stattgefunden haben. Entfallene Proben zählen nicht.</div>`;
+  h+=`<div class="grid" style="margin-top:10px">`+[['Proben',pr.length],['Konzerte',c('konzert')],['Gottesdienste',c('gottesdienst')],['Gesamt',pr.length+gg.length]].map(([l,n])=>`<div class="card"><div class="muted">${l} ${y}</div><div class="big">${n}</div></div>`).join('')+`</div>`;
   h+=`<div class="card"><div class="muted">Probenbeteiligung ${y} (nur Proben)</div>
     <div class="big">${slots?pct(got/slots):'–'}</div>
     <div class="muted">${pr.length?`Ø ${f1(prAvg)} Sänger pro Probe bei Ø ${f1(slots/pr.length)} Mitgliedern (${pr.length} Proben). Neue Mitglieder zählen ab ihrem Chor-Eintritt, ehemalige bis zu ihrem Austritt.`:'Noch keine Proben in diesem Jahr.'}</div></div>`;
@@ -719,7 +795,7 @@ function viewStats(){
   h+=`<h2 style="margin-top:20px">Anwesenheit pro Mitglied</h2><div class="muted">Sortiert nach Anteil der besuchten Proben. Farbig: die drei besten Werte (bei Gleichstand auch mehr als drei Personen).</div><div class="card">`+(rows.length?`<table><tr class="muted"><td>Name</td><td>Stimme</td><td>Proben</td><td>Anteil</td></tr>`+rows.map(r=>{
     const k=top.indexOf(r.p);
     return `<tr class="${k>=0?'r'+(k+1):''}"><td>${esc(dn(r.m))}</td><td class="muted">${r.m.voice}</td><td>${r.n}/${r.tot}</td><td>${r.tot?r.p+' %':'–'}</td></tr>`}).join('')+`</table>`:`<span class="muted">Keine Daten.</span>`)+`</div>`;
-  const cnt={};ev.filter(e=>e.type!=='probe').forEach(e=>e.pieces.forEach(p=>cnt[p]=(cnt[p]||0)+1));
+  const cnt={};gg.forEach(g=>(g.pieces||[]).forEach(p=>cnt[p]=(cnt[p]||0)+1));
   const ps=Object.entries(cnt).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'de'));
   h+=`<h2 style="margin-top:20px">Stücke bei Auftritten</h2><div class="card">`+(ps.length?`<table>`+ps.map(([p,n])=>`<tr><td>${esc(p)}</td><td>${n}×</td></tr>`).join('')+`</table>`:`<span class="muted">Noch keine Stücke eingetragen.</span>`)+`</div>`;
   return h;
@@ -734,7 +810,7 @@ function viewBackup(){
   <div class="card ${old?'warn':''}"><b>Letzte Sicherung:</b> ${lb?fmt(lb):'noch nie'}<div class="muted" style="margin-top:6px">Deine Daten liegen nur auf diesem Gerät. Mache regelmäßig eine Sicherung, zum Beispiel einmal im Monat.</div></div>
   <div class="card"><h2>Sicherung erstellen</h2><div class="muted" style="margin:6px 0 12px">Es öffnet sich das Teilen-Menü. Wähle dort „In Dateien sichern“ oder schicke die Datei per AirDrop oder Mail an dich selbst.</div><button class="btn" data-a="export">Sicherung erstellen</button></div>
   <div class="card"><h2>Sicherung einspielen</h2><div class="muted" style="margin:6px 0 12px">Ersetzt alle Daten auf diesem Gerät durch die der Sicherungsdatei. Damit kannst du die Daten auch auf ein anderes Gerät übertragen.</div><input type="file" data-c="import" accept=".json,application/json"></div>
-  <div class="muted" style="text-align:center;margin-top:20px">${db.members.length} Mitglieder · ${db.events.length} Termine · ${db.gigs.length} Auftritte · ${db.pieces.length} Stücke gespeichert</div>`;
+  <div class="muted" style="text-align:center;margin-top:20px">${db.members.length} Mitglieder · ${db.events.length} Proben · ${db.gigs.length} Auftritte · ${db.pieces.length} Stücke gespeichert</div>`;
 }
 function markBackup(){try{localStorage.setItem('chor-backup',today())}catch(e){}}
 async function doExport(){
@@ -754,8 +830,8 @@ function doImport(file){
     try{
       const d=JSON.parse(r.result);
       if(!Array.isArray(d.members)||!Array.isArray(d.events))throw 0;
-      if(!confirm(`Alle aktuellen Daten ersetzen durch ${d.members.length} Mitglieder, ${d.events.length} Termine, ${(d.gigs||[]).length} Auftritte und ${(d.pieces||[]).length} Stücke?`))return;
-      db={members:d.members.map(normMember),events:d.events.map(e=>({present:[],pieces:[],title:'',...e})),gigs:(Array.isArray(d.gigs)?d.gigs:[]).map(normGig),pieces:(Array.isArray(d.pieces)?d.pieces:[]).map(normPiece)};save();render();alert('Sicherung eingespielt.');
+      if(!confirm(`Alle aktuellen Daten ersetzen durch ${d.members.length} Mitglieder, ${d.events.length} Proben, ${(d.gigs||[]).length} Auftritte und ${(d.pieces||[]).length} Stücke?`))return;
+      db={members:d.members.map(normMember),events:d.events.map(normEvent),gigs:(Array.isArray(d.gigs)?d.gigs:[]).map(normGig),pieces:(Array.isArray(d.pieces)?d.pieces:[]).map(normPiece)};save();render();alert('Sicherung eingespielt.');
     }catch(e){alert('Diese Datei ist keine gültige Sicherung.')}
   };
   r.readAsText(file);
@@ -764,7 +840,7 @@ function doImport(file){
 /* ---------- Render & Events ---------- */
 function render(){
   const y=window.scrollY;
-  const v=ui.eventId?viewEvent:ui.gigId?viewGig:ui.pieceId?viewPiece:{termine:viewTermine,auftritte:viewGigs,repertoire:viewRep,mitglieder:viewMembers,jubilaeen:viewJub,statistik:viewStats,sicherung:viewBackup}[ui.tab];
+  const v=ui.eventId?viewEvent:ui.gigId?viewGig:ui.pieceId?viewPiece:{proben:viewProben,auftritte:viewGigs,repertoire:viewRep,mitglieder:viewMembers,jubilaeen:viewJub,statistik:viewStats,sicherung:viewBackup}[ui.tab];
   $('#app').innerHTML=v()+shareOverlay();
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===ui.tab));
   const dot=document.querySelector('nav [data-t="jubilaeen"] .dot');
@@ -776,24 +852,44 @@ function render(){
 
 document.addEventListener('click',ev=>{
   const t=ev.target.closest('[data-t]');
-  if(t){ui.tab=t.dataset.t;ui.eventId=null;ui.showNew=false;ui.editMember=null;ui.showNewMember=false;ui.gigId=null;ui.showNewGig=false;ui.listMode=false;ui.pieceId=null;ui.showNewPiece=false;ui.pfMsg='';closeShare();window.scrollTo(0,0);render();return}
+  if(t){ui.tab=t.dataset.t;ui.eventId=null;ui.showNew=false;ui.showBulk=false;ui.editMember=null;ui.showNewMember=false;ui.gigId=null;ui.showNewGig=false;ui.listMode=false;ui.pieceId=null;ui.showNewPiece=false;ui.pfMsg='';closeShare();window.scrollTo(0,0);render();return}
   const b=ev.target.closest('[data-a]');if(!b)return;
   const a=b.dataset.a,id=b.dataset.id,e=getEvent(),g=getGig();
   if(a==='new'){ui.showNew=true}
   else if(a==='cancelnew'){ui.showNew=false}
+  else if(a==='bulk'){ui.showBulk=true}
+  else if(a==='cancelbulk'){ui.showBulk=false}
+  else if(a==='dobulk'){
+    const yr=parseInt($('#bYear').value,10),wd=+$('#bDay').value;
+    if(!(yr>=2000&&yr<=2100)){alert('Bitte ein Jahr zwischen 2000 und 2100 eingeben.');return}
+    const have=new Set(db.events.filter(isProbe).map(x=>x.date));
+    let made=0,skipped=0;
+    for(let d=new Date(yr,0,1);d.getFullYear()===yr;d.setDate(d.getDate()+1)){
+      if(d.getDay()!==wd)continue;
+      const k=ymd(d);
+      if(have.has(k)){skipped++;continue}
+      db.events.push(normEvent({id:uid(),date:k,type:'probe'}));made++;
+    }
+    save();ui.year=yr;ui.bulkYear=yr;ui.showBulk=false;render();
+    alert(made+' Proben angelegt'+(skipped?', '+skipped+' übersprungen (gab es schon)':'')+'.');return;
+  }
+  else if(a==='togglecancel'&&e){e.cancelled=!e.cancelled;save()}
   else if(a==='create'){
     const date=$('#nDate').value;if(!date){alert('Bitte ein Datum wählen.');return}
-    const n={id:uid(),date,type:$('#nType').value,title:$('#nTitle').value.trim(),present:[],pieces:[]};
+    const n=normEvent({id:uid(),date,type:'probe',title:$('#nTitle').value.trim()});
     db.events.push(n);save();ui.eventId=n.id;ui.showNew=false;ui.year=+date.slice(0,4);window.scrollTo(0,0);
   }
   else if(a==='open'){ui.eventId=id;window.scrollTo(0,0)}
   else if(a==='back'){ui.eventId=null;window.scrollTo(0,0)}
-  else if(a==='toggle'&&e){e.present=e.present.includes(id)?e.present.filter(x=>x!==id):[...e.present,id];save()}
-  else if(a==='all'&&e){const ids=db.members.filter(m=>m.voice===b.dataset.v&&m.active!==false&&inChoir(m,e.date)).map(m=>m.id);e.present=[...new Set([...e.present,...ids])];save()}
-  else if(a==='none'&&e){const ids=new Set(db.members.filter(m=>m.voice===b.dataset.v).map(m=>m.id));e.present=e.present.filter(x=>!ids.has(x));save()}
+  else if(a==='toggle'&&e){cycle(e,id);save()}
+  else if(a==='gtoggle'&&g){cycle(g,id);save()}
+  else if(a==='gall'&&g){setAll(g,b.dataset.v);save()}
+  else if(a==='gnone'&&g){setNone(g,b.dataset.v);save()}
+  else if(a==='all'&&e){setAll(e,b.dataset.v);save()}
+  else if(a==='none'&&e){setNone(e,b.dataset.v);save()}
   else if(a==='addpiece'&&e){const i=$('#pInput'),p=i.value.trim();if(!p)return;e.pieces.push(p);save();ui.focus='#pInput'}
   else if(a==='delpiece'&&e){e.pieces.splice(+b.dataset.i,1);save()}
-  else if(a==='delevent'&&e){if(!confirm('Diesen Termin wirklich löschen?'))return;db.events=db.events.filter(x=>x.id!==e.id);save();ui.eventId=null}
+  else if(a==='delevent'&&e){if(!confirm('Diese Probe wirklich löschen?'))return;db.events=db.events.filter(x=>x.id!==e.id);save();ui.eventId=null}
   else if(a==='addmember'){
     const first=$('#mFirst').value.trim(),last=$('#mLast').value.trim();
     if(!first&&!last){alert('Bitte Vor- und Nachnamen eingeben.');return}
@@ -816,7 +912,7 @@ document.addEventListener('click',ev=>{
     const m=db.members.find(x=>x.id===id);
     if(!confirm(`${dn(m)} wirklich löschen? Die Anwesenheiten gehen dabei verloren. Tipp: „Pausieren“ oder ein Chor-Austritt behält alle Daten.`))return;
     if(ui.editMember===id)ui.editMember=null;
-    db.members=db.members.filter(x=>x.id!==id);db.events.forEach(x=>x.present=x.present.filter(p=>p!==id));save();
+    db.members=db.members.filter(x=>x.id!==id);db.events.forEach(x=>{x.present=x.present.filter(p=>p!==id);x.away=x.away.filter(p=>p!==id)});db.gigs.forEach(x=>{x.present=x.present.filter(p=>p!==id);x.undecided=x.undecided.filter(p=>p!==id)});save();
   }
   else if(a==='newgig'){ui.showNewGig=true}
   else if(a==='cancelnewgig'){ui.showNewGig=false}
@@ -878,7 +974,6 @@ document.addEventListener('change',ev=>{
   const e=getEvent();
   if(c==='year'){ui.year=+ev.target.value}
   else if(c==='evdate'&&e){if(ev.target.value){e.date=ev.target.value;ui.year=+e.date.slice(0,4);save()}}
-  else if(c==='evtype'&&e){e.type=ev.target.value;save()}
   else if(c==='evtitle'&&e){e.title=ev.target.value.trim();save();return}
   else if(c==='import'){doImport(ev.target.files[0]);return}
   render();
