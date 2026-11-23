@@ -67,7 +67,7 @@ nav button.on{background:var(--acc);color:#fff;font-weight:600}
 .gc .gv{flex:none;display:grid;grid-template-columns:repeat(4,auto);column-gap:6px;row-gap:3px;text-align:center;align-items:center}
 .gc .gv .vh{font-size:10px;color:var(--mute);line-height:1.2}
 .gc .gv b{font-size:13px;white-space:nowrap;font-weight:600}
-.gc .badge{flex:none;font-size:11px;padding:2px 7px}
+.gc .badge{flex:none;width:96px;text-align:center;font-size:12px;padding:3px 6px}
 .card.gr{background:var(--gr);border:2px solid var(--grb)}
 .tl{font-size:12px;line-height:1.3;color:var(--mute);margin-top:6px}
 .sug{max-height:240px;overflow:auto;border:1.5px solid var(--line);border-radius:10px;margin-top:10px;background:var(--bg)}
@@ -138,7 +138,7 @@ tr.r1 td:last-child,tr.r2 td:last-child,tr.r3 td:last-child{border-radius:0 8px 
   <button data-t="repertoire"><span>📖</span>Repertoire</button>
   <button data-t="mitglieder"><span>👥</span>Mitglieder</button>
   <button data-t="jubilaeen"><span>🎂</span>Jubiläen<i class="dot"></i></button>
-  <button data-t="sicherung"><span>💾</span>Sicherung</button>
+  <button data-t="sicherung"><span>⚙️</span>Einstellungen</button>
 </nav>
 <script>
 const KEY='chor-data-v1';
@@ -368,9 +368,9 @@ const listGigs=()=>db.gigs.filter(g=>ui.listSel.includes(g.id)).sort((a,b)=>a.da
 
 function gigCard(g){
   return `<button class="ev gc" data-a="opengig" data-id="${g.id}">
+    <span class="badge ${g.type}">${GTYPES[g.type]||'Sonstiges'}</span>
     <div class="gl"><div><b>${esc(gigTitle(g))}</b></div><div class="muted">${fmt(g.date)}${g.location?' · '+esc(g.location):''}</div></div>
-    <div class="gv">${VOICES.map(v=>`<span class="vh">${v}</span>`).join('')}${VOICES.map(v=>`<b>${voiceCount(g,v,g.undecided)}</b>`).join('')}</div>
-    <span class="badge ${g.type}">${GTYPES[g.type]||'Sonstiges'}</span></button>`;
+    <div class="gv">${VOICES.map(v=>`<span class="vh">${v}</span>`).join('')}${VOICES.map(v=>`<b>${voiceCount(g,v,g.undecided)}</b>`).join('')}</div></button>`;
 }
 function viewGigs(){
   if(ui.listMode)return viewGigList();
@@ -405,6 +405,7 @@ function viewGigList(){
   <div class="card"><div class="muted" style="margin-bottom:10px">${n} Auftritt${n===1?'':'e'} ausgewählt</div>
     <div class="row"><button class="btn" data-a="listimg" ${n?'':'disabled'}>Als Bild</button><button class="btn sec" data-a="listtxt" ${n?'':'disabled'}>Als Text</button></div></div>`;
 }
+const gpl=g=>g.pieces.map((t,i)=>{const p=db.pieces.find(x=>x.id===g.pids[i]);return p?pieceLabel(p):t});
 const pieceLabel=p=>{const x=[p.composer,p.extra].map(t=>(t||'').trim()).filter(Boolean);return (p.title||'(ohne Titel)')+(x.length?' ('+x.join('/')+')':'')};
 function sugHtml(g,q){
   q=(q||'').trim().toLowerCase();
@@ -455,7 +456,7 @@ function viewGig(){
     <button class="btn sec small" style="margin-top:12px" data-a="addtime">+ Zeit hinzufügen</button></div>
   <div class="card"><h2>Ort</h2><input data-c="gloc" placeholder="z. B. Jakobuskirche" value="${esc(g.location)}" autocomplete="off" style="margin-top:10px"></div>
   <div class="card"><h2>Stücke</h2>
-    ${g.pieces.map((p,i)=>`<div class="piece"><b>${i+1}.</b><span>${esc(p)}</span><button class="btn sec small" data-a="upgpiece" data-i="${i}" ${i===0?'disabled':''}>↑</button><button class="btn sec small" data-a="downgpiece" data-i="${i}" ${i===g.pieces.length-1?'disabled':''}>↓</button><button class="btn danger small" data-a="delgpiece" data-i="${i}">✕</button></div>`).join('')}
+    ${gpl(g).map((p,i)=>`<div class="piece"><b>${i+1}.</b><span>${esc(p)}</span><button class="btn sec small" data-a="upgpiece" data-i="${i}" ${i===0?'disabled':''}>↑</button><button class="btn sec small" data-a="downgpiece" data-i="${i}" ${i===g.pieces.length-1?'disabled':''}>↓</button><button class="btn danger small" data-a="delgpiece" data-i="${i}">✕</button></div>`).join('')}
     <div class="row" style="margin-top:10px"><input id="gpInput" data-c="gpq" class="sp" placeholder="Stück suchen oder neu eingeben" autocomplete="off"><button class="btn" data-a="addgpiece">Hinzufügen</button></div>
     <div class="sugh">Vorschläge aus dem Repertoire (antippen zum Hinzufügen). Ein neuer Titel wird automatisch ins Repertoire aufgenommen.</div>
     <div id="gpSug" class="sug">${sugHtml(g,'')}</div></div>
@@ -499,7 +500,7 @@ function gigCanvas(g){
   };
   const title=gigTitle(g),dateTxt=longDate(g.date);
   const times=(g.times||[]).filter(t=>t.time||t.label);
-  const pieces=g.pieces||[];
+  const pieces=gpl(g);
   function run(draw){
     const txt=(s,x,y,col)=>{if(draw){ctx.fillStyle=col;ctx.fillText(s,x,y)}};
     set(66,700);const tl=wrap(title,CW);
@@ -575,9 +576,9 @@ function gigListCanvas(gigs,opt){
       set(34,400);
       if(times.length)wrap(times.map(t=>[fmtTime(t.time),t.label].filter(Boolean).join(' ')).join('   ·   '),CW).forEach(l=>{txt(l,x,y,'#1d1b1a');y+=46});
       if(g.location){set(34,400);wrap('Ort: '+g.location,CW).forEach(l=>{txt(l,x,y,'#1d1b1a');y+=46})}
-      if(opt&&opt.pieces&&(g.pieces||[]).length){
+      if(opt&&opt.pieces&&g.pieces.length){
         y+=6;
-        g.pieces.forEach((p,i)=>{
+        gpl(g).forEach((p,i)=>{
           set(32,400);const pl=wrap(p,CW-56);
           set(32,700);txt((i+1)+'.',x,y,'#7a2e3a');
           set(32,400);pl.forEach((l,k)=>txt(l,x+56,y+k*42,'#555555'));
@@ -599,7 +600,7 @@ function gigText(g){
   const L=['*'+gigTitle(g)+'*',longDate(g.date)];
   (g.times||[]).filter(t=>t.time||t.label).forEach(t=>L.push(timeLine(t)));
   if(g.location)L.push('Ort: '+g.location);
-  if((g.pieces||[]).length){L.push('','Stücke:');g.pieces.forEach((p,i)=>L.push((i+1)+'. '+p))}
+  if(g.pieces.length){L.push('','Stücke:');gpl(g).forEach((p,i)=>L.push((i+1)+'. '+p))}
   if(g.note)L.push('',g.note);
   return L.join('\n');
 }
@@ -609,7 +610,7 @@ function gigListText(gigs,opt){
     L.push('','*'+longDate(g.date)+'*',gigTitle(g));
     (g.times||[]).filter(t=>t.time||t.label).forEach(t=>L.push(timeLine(t)));
     if(g.location)L.push('Ort: '+g.location);
-    if(opt&&opt.pieces&&(g.pieces||[]).length){g.pieces.forEach((p,i)=>L.push((i+1)+'. '+p))}
+    if(opt&&opt.pieces&&g.pieces.length){gpl(g).forEach((p,i)=>L.push((i+1)+'. '+p))}
   });
   return L.join('\n');
 }
@@ -746,12 +747,13 @@ function applyRepField(el,kind){
 }
 
 /* ---------- Mitglieder ---------- */
-function readBirth(){ // volles Datum, sonst Tag und Monat ohne Jahr (gespeichert als 0000-MM-TT); null = ungültig
-  const d=$('#mBirth').value;if(d)return d;
-  const dd=+$('#mBD').value,mm=+$('#mBM').value;
-  if(!dd&&!mm)return '';
-  if(!dd||!mm||new Date(2000,mm-1,dd).getMonth()!==mm-1)return null;
-  return '0000-'+String(mm).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
+const bpart=(b,k)=>{if(!b)return 0;const v=k==='d'?+b.slice(8,10):k==='m'?+b.slice(5,7):+b.slice(0,4);return k==='y'&&!hasYear(b)?0:v};
+function readBirth(){ // Tag und Monat sind Pflicht, das Jahr ist optional (ohne Jahr: 0000-MM-TT); null = ungültig
+  const dd=+$('#mBD').value,mm=+$('#mBM').value,yy=+$('#mBY').value;
+  if(!dd&&!mm&&!yy)return '';
+  if(!dd||!mm)return null;
+  if(new Date(yy||2000,mm-1,dd).getMonth()!==mm-1)return null;
+  return (yy?String(yy):'0000')+'-'+String(mm).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
 }
 function memberForm(m,edit){
   return `<div class="card"><h2>${edit?'Mitglied bearbeiten':'Neues Mitglied'}</h2>
@@ -759,10 +761,9 @@ function memberForm(m,edit){
     <label>Vorname<input id="mFirst" value="${esc(m.first||'')}" autocomplete="off"></label>
     <label>Nachname<input id="mLast" value="${esc(m.last||'')}" autocomplete="off"></label>
     <label>Stimme<select id="mVoice">${VOICES.map(v=>`<option ${v===m.voice?'selected':''}>${v}</option>`).join('')}</select></label>
-    <label>Geburtstag<span class="dw"><input type="date" id="mBirth" value="${hasYear(m.birth)?m.birth:''}"></span></label>
+    <div style="grid-column:1/-1">Geburtstag<div class="dwrap"><select id="mBD" style="margin-top:0"><option value="">Tag</option>${Array.from({length:31},(_,i)=>`<option value="${i+1}" ${bpart(m.birth,'d')===i+1?'selected':''}>${i+1}.</option>`).join('')}</select><select id="mBM" style="margin-top:0"><option value="">Monat</option>${['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'].map((n,i)=>`<option value="${i+1}" ${bpart(m.birth,'m')===i+1?'selected':''}>${n}</option>`).join('')}</select><select id="mBY" style="margin-top:0"><option value="">Jahr</option>${Array.from({length:new Date().getFullYear()-1919},(_,i)=>new Date().getFullYear()-i).map(y=>`<option ${bpart(m.birth,'y')===y?'selected':''}>${y}</option>`).join('')}</select></div></div>
     <label>Chor-Eintritt<span class="dw"><input type="date" id="mJoined" value="${m.joined||''}"></span></label>
-    <div class="hint muted">Jahr unbekannt? Dann links leer lassen und rechts nur Tag und Monat wählen.</div>
-    <div style="grid-column:1/-1">Geburtstag ohne Jahr<div class="dwrap"><select id="mBD" style="margin-top:0"><option value="">Tag</option>${Array.from({length:31},(_,i)=>`<option value="${i+1}" ${!hasYear(m.birth)&&m.birth&&+m.birth.slice(8,10)===i+1?'selected':''}>${i+1}.</option>`).join('')}</select><select id="mBM" style="margin-top:0"><option value="">Monat</option>${['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'].map((n,i)=>`<option value="${i+1}" ${!hasYear(m.birth)&&m.birth&&+m.birth.slice(5,7)===i+1?'selected':''}>${n}</option>`).join('')}</select><button class="btn sec small" type="button" data-a="clearbirth">Leeren</button></div></div>
+    <span></span>
     <div>Chor-Austritt<div class="dwrap"><span class="dw"><input type="date" id="mLeft" value="${m.left||''}"></span><button class="btn sec small" type="button" data-a="clearleft">Leeren</button></div></div>
     <div class="hint muted">Nur ausfüllen, wenn die Person den Chor verlässt. Ab diesem Datum erscheint sie unter „Ehemalige“.</div>
   </div>
@@ -838,7 +839,8 @@ function viewJub(){
 }
 
 /* ---------- Statistik ---------- */
-const fmtMin=m=>m+' Min / '+(Math.round(m/60*10)/10).toString().replace('.',',')+' Std';
+const dec=x=>(Math.round(x*10)/10).toString().replace('.',',');
+const fmtMin=m=>m+' Min / '+dec(m/60)+' Std / '+dec(m/1440)+' Tage';
 function viewStats(){
   const probeMin=db.settings.probeMin;
   const y=String(ui.year);
@@ -886,7 +888,7 @@ function viewStats(){
 const lastBackup=()=>{try{return localStorage.getItem('chor-backup')}catch(e){return null}};
 function settingsCard(){
   const st=db.settings,cs=[...st.conductors];
-  return `<h1 style="margin-top:28px">Einstellungen</h1><div class="muted">Allgemeine Angaben zum Chor. Sie sind in der Sicherung enthalten.</div>
+  return `<div class="muted">Allgemeine Angaben zum Chor. Sie sind in der Sicherung enthalten.</div>
   <div class="card"><div class="fgrid">
     <label style="grid-column:1/-1">Name des Chores<input data-c="set_name" value="${esc(st.name)}" autocomplete="off"></label>
     <label>Gegründet<input data-c="set_founded" value="${esc(st.founded)}" placeholder="z. B. 1975" autocomplete="off"></label>
@@ -916,12 +918,12 @@ function applySettingsField(el){
 function viewBackup(){
   const lb=lastBackup();
   const old=!lb||(Date.now()-new Date(lb+'T12:00:00'))/864e5>30;
-  return `<h1>Sicherung</h1>
-  <div class="card ${old?'warn':''}"><b>Letzte Sicherung:</b> ${lb?fmt(lb):'noch nie'}<div class="muted" style="margin-top:6px">Deine Daten liegen nur auf diesem Gerät. Mache regelmäßig eine Sicherung, zum Beispiel einmal im Monat.</div></div>
-  <div class="card"><h2>Sicherung erstellen</h2><div class="muted" style="margin:6px 0 12px">Es öffnet sich das Teilen-Menü. Wähle dort „In Dateien sichern“ oder schicke die Datei per AirDrop oder Mail an dich selbst.</div>
-    <div class="muted" style="margin:0 0 12px"><b>Für OneDrive:</b> Ist die OneDrive-App installiert, erscheint sie im Teilen-Menü. Wähle sie aus und dann einen Ordner. Alternativ wähle „In Dateien sichern“ und dort den Ort „OneDrive“.</div><button class="btn" data-a="export">Sicherung erstellen (auch für OneDrive)</button></div>
-  <div class="card"><h2>Sicherung einspielen</h2><div class="muted" style="margin:6px 0 12px">Ersetzt alle Daten auf diesem Gerät durch die der Sicherungsdatei. Damit kannst du die Daten auch auf ein anderes Gerät übertragen.</div><input type="file" data-c="import" accept=".json,application/json"></div>
+  return `<h1>Einstellungen</h1>
   ${settingsCard()}
+  <div class="sect" style="margin-top:34px">Sicherung</div>
+  <div class="card ${old?'warn':''}"><b>Letzte Sicherung:</b> ${lb?fmt(lb):'noch nie'}<div class="muted" style="margin-top:6px">Deine Daten liegen nur auf diesem Gerät. Mache regelmäßig eine Sicherung, zum Beispiel einmal im Monat.</div></div>
+  <div class="card"><button class="btn wide" style="margin:0" data-a="export">Sicherung erstellen</button></div>
+  <div class="card"><h2>Sicherung einspielen</h2><div class="muted" style="margin:6px 0 12px">Ersetzt alle Daten auf diesem Gerät durch die der Sicherungsdatei. Damit kannst du die Daten auch auf ein anderes Gerät übertragen.</div><input type="file" data-c="import" accept=".json,application/json"></div>
   <div class="muted" style="text-align:center;margin-top:20px">${db.members.length} Mitglieder · ${db.events.length} Proben · ${db.gigs.length} Auftritte · ${db.pieces.length} Stücke gespeichert</div>`;
 }
 function markBackup(){try{localStorage.setItem('chor-backup',today())}catch(e){}}
@@ -1009,20 +1011,19 @@ document.addEventListener('click',ev=>{
     const first=$('#mFirst').value.trim(),last=$('#mLast').value.trim();
     if(!first&&!last){alert('Bitte Vor- und Nachnamen eingeben.');return}
     ui.lastVoice=$('#mVoice').value;
-    const bd=readBirth();if(bd===null){alert('Bitte Tag und Monat des Geburtstags gültig auswählen.');return}
+    const bd=readBirth();if(bd===null){alert('Bitte Tag und Monat des Geburtstags gültig auswählen (das Jahr ist freiwillig).');return}
     db.members.push(normMember({id:uid(),first,last,voice:ui.lastVoice,birth:bd,joined:$('#mJoined').value||'',left:$('#mLeft').value||'',active:true}));save();ui.showNewMember=false;
   }
   else if(a==='newmember'){ui.showNewMember=true;ui.focus='#mFirst'}
   else if(a==='cancelnewmember'){ui.showNewMember=false}
   else if(a==='editmember'){ui.editMember=id;ui.showNewMember=false;window.scrollTo(0,0)}
   else if(a==='canceledit'){ui.editMember=null}
-  else if(a==='clearbirth'){['#mBirth','#mBD','#mBM'].forEach(k=>{const i=$(k);if(i)i.value=''});return}
   else if(a==='clearleft'){const i=$('#mLeft');if(i)i.value='';return}
   else if(a==='savemember'){
     const m=db.members.find(x=>x.id===ui.editMember);
     const first=$('#mFirst').value.trim(),last=$('#mLast').value.trim();
     if(!first&&!last){alert('Bitte Vor- und Nachnamen eingeben.');return}
-    const bd=readBirth();if(bd===null){alert('Bitte Tag und Monat des Geburtstags gültig auswählen.');return}
+    const bd=readBirth();if(bd===null){alert('Bitte Tag und Monat des Geburtstags gültig auswählen (das Jahr ist freiwillig).');return}
     m.first=first;m.last=last;m.voice=$('#mVoice').value;m.birth=bd;m.joined=$('#mJoined').value||'';m.left=$('#mLeft').value||'';normMember(m);save();ui.editMember=null;
   }
   else if(a==='togglemember'){const m=db.members.find(x=>x.id===id);m.active=m.active===false;save()}
