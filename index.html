@@ -64,9 +64,10 @@ nav button.on{background:var(--acc);color:#fff;font-weight:600}
 .gc{flex-wrap:nowrap;gap:8px;padding:12px 12px}
 .gc .gl{flex:1 1 0;min-width:0;overflow-wrap:anywhere;hyphens:auto;-webkit-hyphens:auto}
 .gc .gl .muted{font-size:14px}
-.gc .gv{flex:none;display:grid;grid-template-columns:repeat(4,auto);column-gap:6px;row-gap:3px;text-align:center;align-items:center}
-.gc .gv .vh{font-size:10px;color:var(--mute);line-height:1.2}
-.gc .gv b{font-size:13px;white-space:nowrap;font-weight:600}
+.yr{font-size:20px;font-weight:700;color:var(--acc);margin:22px 4px 0;padding-bottom:6px;border-bottom:2px solid var(--line)}
+.gc .gv{flex:none;display:grid;grid-template-columns:repeat(4,auto);column-gap:22px;row-gap:4px;text-align:center;align-items:center}
+.gc .gv .vh{font-size:14px;color:var(--mute);line-height:1.2}
+.gc .gv b{font-size:19px;white-space:nowrap;font-weight:600}
 .gc .badge{flex:none;width:96px;text-align:center;font-size:12px;padding:3px 6px}
 .card.gr{background:var(--gr);border:2px solid var(--grb)}
 .tl{font-size:12px;line-height:1.3;color:var(--mute);margin-top:6px}
@@ -366,6 +367,7 @@ const timeLine=t=>[t.label,fmtTime(t.time)].filter(Boolean).join(' ');
 const gigTitle=g=>g.title||GTYPES[g.type]||'Auftritt';
 const listGigs=()=>db.gigs.filter(g=>ui.listSel.includes(g.id)).sort((a,b)=>a.date.localeCompare(b.date));
 
+const byYear=(list,fn)=>{let y='',h='';list.forEach(g=>{const gy=g.date.slice(0,4);if(gy!==y){y=gy;h+=`<div class="yr">${y}</div>`}h+=fn(g)});return h};
 function gigCard(g){
   return `<button class="ev gc" data-a="opengig" data-id="${g.id}">
     <span class="badge ${g.type}">${GTYPES[g.type]||'Sonstiges'}</span>
@@ -385,8 +387,8 @@ function viewGigs(){
       <div class="row" style="margin-top:12px"><button class="btn" data-a="creategig">Anlegen</button><button class="btn sec" data-a="cancelnewgig">Abbrechen</button></div></div>`;
   }else h+=`<div class="row" style="margin:12px 0"><button class="btn sp" data-a="newgig">+ Neuer Auftritt</button>${db.gigs.length?'<button class="btn sec" data-a="listmode">Liste teilen</button>':''}</div>`;
   if(!db.gigs.length)h+=`<div class="muted" style="margin-top:16px">Noch keine Auftritte angelegt.</div>`;
-  if(up.length)h+=`<h2 style="margin-top:18px">Anstehend</h2>`+up.map(gigCard).join('');
-  if(past.length)h+=`<h2 style="margin-top:18px">Vergangen</h2>`+past.map(gigCard).join('');
+  if(up.length)h+=`<h2 style="margin-top:18px">Anstehend</h2>`+byYear(up,gigCard);
+  if(past.length)h+=`<h2 style="margin-top:18px">Vergangen</h2>`+byYear(past,gigCard);
   return h;
 }
 function viewGigList(){
@@ -400,10 +402,10 @@ function viewGigList(){
   <h1 style="margin-top:12px">Liste teilen</h1><div class="muted">Wähle die Auftritte aus, die in der Liste stehen sollen.</div>
   <div class="card"><div class="muted">Überschrift</div><input data-c="ltitle" value="${esc(ui.listTitle)}" autocomplete="off" style="margin-top:6px">
     <div class="chips" style="margin:12px 0 0"><button class="chip ${ui.listPieces?'on':''}" data-a="tglpieces"><span class="ck">✓</span><span class="t"><span class="tt">Stücke mit anzeigen</span></span></button></div></div>
-  ${up.length?`<h2 style="margin-top:16px">Anstehend</h2>`+up.map(row).join(''):''}
-  ${past.length?`<h2 style="margin-top:16px">Vergangen</h2>`+past.map(row).join(''):''}
   <div class="card"><div class="muted" style="margin-bottom:10px">${n} Auftritt${n===1?'':'e'} ausgewählt</div>
-    <div class="row"><button class="btn" data-a="listimg" ${n?'':'disabled'}>Als Bild</button><button class="btn sec" data-a="listtxt" ${n?'':'disabled'}>Als Text</button></div></div>`;
+    <div class="row"><button class="btn" data-a="listimg" ${n?'':'disabled'}>Als Bild</button><button class="btn sec" data-a="listtxt" ${n?'':'disabled'}>Als Text</button></div></div>
+  ${up.length?`<h2 style="margin-top:16px">Anstehend</h2>`+byYear(up,row):''}
+  ${past.length?`<h2 style="margin-top:16px">Vergangen</h2>`+byYear(past,row):''}`;
 }
 const gpl=g=>g.pieces.map((t,i)=>{const p=db.pieces.find(x=>x.id===g.pids[i]);return p?pieceLabel(p):t});
 const pieceLabel=p=>{const x=[p.composer,p.extra].map(t=>(t||'').trim()).filter(Boolean);return (p.title||'(ohne Titel)')+(x.length?' ('+x.join('/')+')':'')};
