@@ -252,6 +252,7 @@ const spanText=s=>s.y===0?`${s.m} Monate`:`${s.y} Jahre${s.m?`, ${s.m} Monat${s.
 
 /* ---------- Proben ---------- */
 const eligibleFor=(e,v)=>db.members.filter(m=>m.voice===v&&((m.active!==false&&inChoir(m,e.date))||marks(e).includes(m.id))).sort(byName);
+const eligibleAll=e=>VOICES.flatMap(v=>eligibleFor(e,v));
 const awayCount=e=>e.away.filter(id=>db.members.some(m=>m.id===id)).length;
 function probeRow(e){
   const away=awayCount(e);
@@ -325,12 +326,12 @@ function cycle(e,id){
 }
 function setAll(e,v){
   const gig=isGig(e),skip=gig?e.no:e.away;
-  const ids=db.members.filter(m=>m.voice===v&&m.active!==false&&inChoir(m,e.date)&&!skip.includes(m.id)).map(m=>m.id);
+  const ids=db.members.filter(m=>(v===null||m.voice===v)&&m.active!==false&&inChoir(m,e.date)&&!skip.includes(m.id)).map(m=>m.id);
   e.present=[...new Set([...e.present,...ids])];
   if(gig){const s=new Set(ids);e.undecided=e.undecided.filter(x=>!s.has(x))}
 }
 function setNone(e,v){
-  const ids=new Set(db.members.filter(m=>m.voice===v).map(m=>m.id));
+  const ids=new Set(db.members.filter(m=>v===null||m.voice===v).map(m=>m.id));
   e.present=e.present.filter(x=>!ids.has(x));
   if(isGig(e)){e.undecided=e.undecided.filter(x=>!ids.has(x));e.no=e.no.filter(x=>!ids.has(x))}
 }
@@ -339,13 +340,13 @@ function viewEvent(){
   const probe=isProbe(e),awayN=awayCount(e);
   const allPieces=[...new Set([...db.events.flatMap(x=>x.pieces),...db.pieces.map(p=>p.title).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'de'));
   let h=`<button class="btn sec small" data-a="back">‹ Zurück</button>
-  <div class="card"><div class="row" style="margin-bottom:10px"><span class="badge ${probe?'':e.type}">${probe?'Probe':(TYPES[e.type]||'')}</span><input type="date" data-c="evdate" value="${e.date}"></div>
-  <input data-c="evtitle" placeholder="${probe?'Bemerkung, z. B. Sommerferien':'Titel oder Ort (optional)'}" value="${esc(e.title)}" autocomplete="off">
-  ${probe?`<div class="chips" style="margin:12px 0 0"><button class="chip ${e.cancelled?'st away':''}" data-a="togglecancel"><span class="ck">✗</span><span class="t"><span class="tt">Probe ist entfallen</span></span></button></div>`:`<div class="muted" style="margin-top:10px">Alter Eintrag. Er zählt nicht in der Statistik. Konzerte und Gottesdienste legst du unter „Auftritte“ an.</div>`}</div>`;
+  <div class="card"><div class="row" style="${probe?'':'margin-bottom:10px'}"><input type="date" data-c="evdate" value="${e.date}"><input data-c="evtitle" style="width:auto;flex:1 1 200px" placeholder="${probe?'Bemerkung, z. B. Sommerferien':'Titel oder Ort (optional)'}" value="${esc(e.title)}" autocomplete="off">
+  ${probe?`<button class="chip ${e.cancelled?'st away':''}" style="flex:none;width:190px;height:44px" data-a="togglecancel"><span class="ck">✗</span><span class="t"><span class="tt">Probe entfällt</span></span></button>`:''}</div>
+  ${probe?'':`<div class="muted" style="margin-top:10px">Alter Eintrag. Er zählt nicht in der Statistik. Konzerte und Gottesdienste legst du unter „Auftritte“ an.</div>`}</div>`;
   if(e.cancelled){
     h+=`<div class="card muted">Diese Probe ist entfallen und zählt nicht in der Statistik. Die Bemerkung oben dient als Grund.</div>`;
   }else{
-    h+=`<div class="card count"><b>${presentCount(e)}</b> anwesend${awayN?` · ${awayN} abgemeldet`:''}<div class="muted">${VOICES.map(v=>v+' '+presentOfVoice(e,v)).join(' · ')}</div></div>`;
+    h+=`<div class="card count"><div class="row"><div class="sp"><b>${presentCount(e)}</b> von ${eligibleAll(e).length} anwesend${awayN?` · ${awayN} abgemeldet`:''}<div class="muted">Antippen: gelb offen, ✓ da, ✗ abgemeldet</div></div><button class="btn sec small" data-a="allx">alle da</button><button class="btn sec small" data-a="nonex">keine</button></div></div>`;
     h+=voiceSections(e,'toggle','all','none');
   }
   if(!probe)h+=`<div class="card"><h2>Gesungene Stücke</h2>
@@ -1016,6 +1017,8 @@ document.addEventListener('click',ev=>{
   else if(a==='gtoggle'&&g){cycle(g,id);save()}
   else if(a==='gall'&&g){setAll(g,b.dataset.v);save()}
   else if(a==='gnone'&&g){setNone(g,b.dataset.v);save()}
+  else if(a==='allx'&&e){setAll(e,null);save()}
+  else if(a==='nonex'&&e){setNone(e,null);save()}
   else if(a==='all'&&e){setAll(e,b.dataset.v);save()}
   else if(a==='none'&&e){setNone(e,b.dataset.v);save()}
   else if(a==='addpiece'&&e){const i=$('#pInput'),p=i.value.trim();if(!p)return;e.pieces.push(p);save();ui.focus='#pInput'}
