@@ -341,7 +341,8 @@ function viewEvent(){
   const allPieces=[...new Set([...db.events.flatMap(x=>x.pieces),...db.pieces.map(p=>p.title).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'de'));
   let h=`<button class="btn sec small" data-a="back">‹ Zurück</button>
   <div class="card"><div class="row" style="${probe?'':'margin-bottom:10px'}"><input type="date" data-c="evdate" value="${e.date}"><input data-c="evtitle" style="width:auto;flex:1 1 200px" placeholder="${probe?'Bemerkung, z. B. Sommerferien':'Titel oder Ort (optional)'}" value="${esc(e.title)}" autocomplete="off">
-  ${probe?`<button class="chip ${e.cancelled?'st away':''}" style="flex:none;width:190px;height:44px" data-a="togglecancel"><span class="ck">✗</span><span class="t"><span class="tt">Probe entfällt</span></span></button>`:''}</div>
+  ${probe?`<button class="chip ${e.cancelled?'st away':''}" style="flex:none;width:190px;height:44px" data-a="togglecancel"><span class="ck">✗</span><span class="t"><span class="tt">Probe entfällt</span></span></button>`:''}
+  <button class="btn danger small" style="flex:none;min-height:44px" data-a="delevent">${probe?'Probe löschen':'Eintrag löschen'}</button></div>
   ${probe?'':`<div class="muted" style="margin-top:10px">Alter Eintrag. Er zählt nicht in der Statistik. Konzerte und Gottesdienste legst du unter „Auftritte“ an.</div>`}</div>`;
   if(e.cancelled){
     h+=`<div class="card muted">Diese Probe ist entfallen und zählt nicht in der Statistik. Die Bemerkung oben dient als Grund.</div>`;
@@ -352,7 +353,6 @@ function viewEvent(){
   if(!probe)h+=`<div class="card"><h2>Gesungene Stücke</h2>
     ${e.pieces.map((p,i)=>`<div class="piece"><span>${esc(p)}</span><button class="btn danger small" data-a="delpiece" data-i="${i}">✕</button></div>`).join('')}
     <div class="row" style="margin-top:10px"><input id="pInput" class="sp" list="pList" placeholder="Stück hinzufügen" autocomplete="off"><datalist id="pList">${allPieces.map(p=>`<option value="${esc(p)}">`).join('')}</datalist><button class="btn" data-a="addpiece">Hinzufügen</button></div></div>`;
-  h+=`<button class="btn danger wide" data-a="delevent">${probe?'Probe löschen':'Eintrag löschen'}</button>`;
   return h;
 }
 
