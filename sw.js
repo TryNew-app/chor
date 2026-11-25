@@ -1,6 +1,6 @@
 // Service Worker: macht die App offline nutzbar.
 // Wenn du die App später änderst, erhöhe die Zahl bei VERSION.
-const VERSION = 'chor-v15';
+const VERSION = 'chor-v16';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
