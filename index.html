@@ -59,6 +59,17 @@ nav button.on{background:var(--acc);color:#fff;font-weight:600}
 .chip.abs{background:var(--abs);border-color:var(--absb)}
 .chip.away{background:var(--away);border-color:var(--awayb)}
 .chip.und{background:var(--und);border-color:var(--undb)}
+/* Stimmgruppen nebeneinander (Optik wie in der Orchester-App) */
+.igrid{display:grid;grid-template-columns:1fr;gap:12px;align-items:start;margin-top:10px}
+@media(min-width:560px){.igrid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:760px){.igrid{grid-template-columns:repeat(4,1fr)}}
+.ig{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid;background:var(--card);border-radius:12px;padding:8px 8px 6px;margin:0;min-width:0}
+.ih{display:flex;align-items:center;gap:6px;margin:0 2px 6px;font-size:16px;min-height:32px;flex-wrap:wrap}
+.ih .sp{line-height:1.15;overflow-wrap:anywhere;flex:1 1 auto}
+.ih .cnt{color:var(--mute);font-size:14px;white-space:nowrap}
+.btn.tiny{padding:3px 9px;min-height:30px;font-size:14px;border-radius:9px}
+.ichips{display:grid;gap:5px}
+.ichips .chip{height:42px;font-size:15px;border-radius:10px}
 .ev.cx{opacity:.55}
 .ev.cx b{text-decoration:line-through}
 .gc{flex-wrap:nowrap;gap:8px;padding:12px 12px}
@@ -288,14 +299,15 @@ function memberChip(m,e,act){
   return `<button class="chip st ${s}" data-a="${act}" data-id="${m.id}"><span class="ck">${sym}</span><span class="t"><span class="tt">${esc(dn(m))}</span></span></button>`;
 }
 function voiceSections(e,tg,al,no){
-  const gig=isGig(e);let h='';
+  const gig=isGig(e);let h='<div class="igrid">';
   for(const v of VOICES){
     const ms=eligibleFor(e,v),o=pcount(e,v,awayList(e));
-    h+=`<div class="row" style="margin-top:14px"><h2 class="sp">${v} <span class="muted">${presentOfVoice(e,v)}/${ms.length}${o?(gig?` (${o})`:` · ${o} abgemeldet`):''}</span></h2>
-      <button class="btn sec small" data-a="${al}" data-v="${v}">alle</button><button class="btn sec small" data-a="${no}" data-v="${v}">keine</button></div>`;
-    h+=ms.length?`<div class="chips">${ms.map(m=>memberChip(m,e,tg)).join('')}</div>`:`<div class="muted" style="margin:6px 0 12px">Keine Mitglieder in dieser Stimme.</div>`;
+    h+=`<div class="ig"><div class="ih"><b class="sp">${v}</b><span class="cnt">${presentOfVoice(e,v)}/${ms.length}${o?(gig?` (${o})`:` · ${o} ✗`):''}</span>
+      <button class="btn sec tiny" data-a="${al}" data-v="${v}">alle</button><button class="btn sec tiny" data-a="${no}" data-v="${v}">keine</button></div>`;
+    h+=ms.length?`<div class="ichips">${ms.map(m=>memberChip(m,e,tg)).join('')}</div>`:`<div class="muted" style="margin:4px 2px 8px">Keine Mitglieder.</div>`;
+    h+='</div>';
   }
-  return h;
+  return h+'</div>';
 }
 /* Reihum tippen: abwesend → anwesend → abgemeldet (Proben) bzw. unentschieden (Auftritte) → abwesend */
 function cycle(e,id){
@@ -354,7 +366,7 @@ function fitChips(){
     if(tt.getBoundingClientRect().width>room()){ // sehr langer Name: zwei kleine Zeilen im selben Feld
       tt.style.display='block';tt.style.whiteSpace='normal';tt.style.lineHeight='1.15';tt.style.overflowWrap='anywhere';
       s=14;box.style.fontSize=s+'px';
-      while(tt.getBoundingClientRect().height>44&&s>8){s-=0.5;box.style.fontSize=s+'px'}
+      while(tt.getBoundingClientRect().height>Math.min(44,box.parentElement.clientHeight-6)&&s>8){s-=0.5;box.style.fontSize=s+'px'}
     }
   });
 }
