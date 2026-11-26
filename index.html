@@ -88,6 +88,7 @@ nav button.on{background:var(--acc);color:#fff;font-weight:600}
 .sugh{font-size:13px;color:var(--mute);margin-top:12px}
 .mt td{font-size:15px;padding:8px 4px}
 .mt td:nth-child(n+2){text-align:right;white-space:nowrap}
+@media(max-width:700px){.mt td{font-size:13px;padding:7px 3px}}
 .cond{border-bottom:1px solid var(--line);padding:10px 0}
 .count b{font-size:30px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));grid-auto-rows:1fr;gap:10px}
@@ -856,6 +857,16 @@ function viewJub(){
 /* ---------- Statistik ---------- */
 const dec=x=>(Math.round(x*10)/10).toString().replace('.',',');
 const fmtMin=m=>m+' Min / '+dec(m/60)+' Std / '+dec(m/1440)+' Tage';
+function memberRows(pr){
+  const y=String(ui.year);
+  const rows=db.members.filter(m=>pr.some(e=>e.present.includes(m.id))||(m.active!==false&&(!m.joined||m.joined<=y+'-12-31')&&(!m.left||m.left>=y+'-01-01'))).map(m=>{
+    const n=pr.filter(e=>e.present.includes(m.id)).length;
+    const tot=pr.filter(e=>e.present.includes(m.id)||inChoir(m,e.date)).length;
+    return{m,n,tot,p:tot?Math.round(n/tot*100):-1};
+  }).sort((a,b)=>b.p-a.p||b.n-a.n||byName(a.m,b.m));
+  const top=[...new Set(rows.filter(r=>r.p>0).map(r=>r.p))].slice(0,3);
+  return{rows,top};
+}
 function viewStats(){
   const probeMin=db.settings.probeMin;
   const y=String(ui.year);
@@ -883,20 +894,103 @@ function viewStats(){
     const g=pr.reduce((s,e)=>s+presentOfVoice(e,v),0);
     return `<tr><td>${v}</td><td class="muted">${n} Mitglied${n===1?'':'er'}</td><td>${pr.length?'Ø '+f1(a)+(sl?' ('+pct(g/sl)+')':''):'–'}</td></tr>`}).join('')+`</table></div>`;
   // Anwesenheit pro Mitglied: höchster Anteil zuerst, die besten drei Prozentwerte farbig
-  const rows=db.members.filter(m=>pr.some(e=>e.present.includes(m.id))||(m.active!==false&&(!m.joined||m.joined<=y+'-12-31')&&(!m.left||m.left>=y+'-01-01'))).map(m=>{
-    const n=pr.filter(e=>e.present.includes(m.id)).length;
-    const tot=pr.filter(e=>e.present.includes(m.id)||inChoir(m,e.date)).length;
-    return{m,n,tot,p:tot?Math.round(n/tot*100):-1};
-  }).sort((a,b)=>b.p-a.p||b.n-a.n||byName(a.m,b.m));
-  const top=[...new Set(rows.filter(r=>r.p>0).map(r=>r.p))].slice(0,3);
-  h+=`<h2 style="margin-top:20px">Anwesenheit pro Mitglied</h2><div class="muted">Sortiert nach Anteil der besuchten Proben. Farbig: die drei besten Werte (bei Gleichstand auch mehr als drei Personen).</div><div class="card">`+(rows.length?`<table class="mt"><tr class="muted"><td>Name</td><td>Proben</td><td>Zeit in Proben</td><td>Anteil</td></tr>`+rows.map(r=>{
+  const {rows,top}=memberRows(pr);
+  const gcell=(m,ty)=>{
+    const l=gg.filter(g=>g.type===ty&&((m.active!==false&&inChoir(m,g.date))||marks(g).includes(m.id)));
+    return l.length?l.filter(g=>g.present.includes(m.id)).length+'/'+l.length:'–'};
+  h+=`<h2 style="margin-top:20px">Anwesenheit pro Mitglied</h2><div class="muted">Sortiert nach Anteil der besuchten Proben. Farbig: die drei besten Werte (bei Gleichstand auch mehr als drei Personen). Auftritte beeinflussen Zeit und Anteil nicht.</div><div class="card" style="overflow-x:auto;-webkit-overflow-scrolling:touch">`+(rows.length?`<table class="mt" style="min-width:560px"><tr class="muted"><td>Name</td><td>Gottesdienst</td><td>Konzert</td><td>Sonstiges</td><td>Proben</td><td>Zeit in Proben</td><td>Anteil</td></tr>`+rows.map(r=>{
     const k=top.indexOf(r.p);
-    return `<tr class="${k>=0?'r'+(k+1):''}"><td>${esc(dn(r.m))}</td><td>${r.n}/${r.tot}</td><td>${fmtMin(r.n*probeMin)}</td><td>${r.tot?r.p+' %':'–'}</td></tr>`}).join('')+`</table>`:`<span class="muted">Keine Daten.</span>`)+`</div>`;
+    return `<tr class="${k>=0?'r'+(k+1):''}"><td>${esc(dn(r.m))}</td><td>${gcell(r.m,'gottesdienst')}</td><td>${gcell(r.m,'konzert')}</td><td>${gcell(r.m,'sonstiges')}</td><td>${r.n}/${r.tot}</td><td>${fmtMin(r.n*probeMin)}</td><td>${r.tot?r.p+' %':'–'}</td></tr>`}).join('')+`</table>`:`<span class="muted">Keine Daten.</span>`)+`</div>`+(rows.length?`<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn sec small" data-a="exppdf">Exportieren (PDF)</button></div>`:'');
   const cnt={};gg.forEach(g=>(g.pieces||[]).forEach(p=>cnt[p]=(cnt[p]||0)+1));
   const ps=Object.entries(cnt).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'de'));
   const total=ps.reduce((n,[,k])=>n+k,0);
   h+=`<h2 style="margin-top:20px">Stücke bei Auftritten</h2><div class="muted" style="margin-top:4px">${total?`Im Jahr ${y} hat der Chor bei Auftritten insgesamt ${total===1?'ein Stück':total+' Stücke'} gesungen${ps.length!==total?` (${ps.length} verschiedene)`:''}.`:`Im Jahr ${y} wurden bei Auftritten noch keine Stücke gesungen.`}</div><div class="card">`+(ps.length?`<table>`+ps.map(([p,n])=>`<tr><td>${esc(p)}</td><td>${n}×</td></tr>`).join('')+`</table>`:`<span class="muted">Noch keine Stücke eingetragen.</span>`)+`</div>`;
   return h;
+}
+
+/* ---------- PDF-Export: Anwesenheit pro Mitglied (Querformat A4, ohne Internet) ---------- */
+function makePdf(pages,W,H){
+  // pages: Liste von Inhaltsströmen (Strings). Standardschrift Helvetica, Latin-1.
+  const objs=[];const add=x=>{objs.push(x);return objs.length};
+  const cat=add(null),pgs=add(null),f1=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'),f2=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+  const kids=[];
+  pages.forEach(c=>{const ci=add('<< /Length '+c.length+' >>\nstream\n'+c+'\nendstream');const pi=add(`<< /Type /Page /Parent ${pgs} 0 R /MediaBox [0 0 ${W} ${H}] /Contents ${ci} 0 R /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> >>`);kids.push(pi+' 0 R')});
+  objs[cat-1]=`<< /Type /Catalog /Pages ${pgs} 0 R >>`;
+  objs[pgs-1]=`<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${kids.length} >>`;
+  let out='%PDF-1.4\n';const off=[];
+  objs.forEach((o,i)=>{off.push(out.length);out+=(i+1)+' 0 obj\n'+o+'\nendobj\n'});
+  const xr=out.length;
+  out+='xref\n0 '+(objs.length+1)+'\n0000000000 65535 f \n'+off.map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('')+'trailer\n<< /Size '+(objs.length+1)+' /Root '+cat+' 0 R >>\nstartxref\n'+xr+'\n%%EOF';
+  const u=new Uint8Array(out.length);for(let i=0;i<out.length;i++)u[i]=out.charCodeAt(i)&255;
+  return u;
+}
+const pdfStr=t=>String(t).replace(/[–—]/g,'-').replace(/[^\x20-\x7e\xa0-\xff]/g,'?').replace(/([\\()])/g,'\\$1');
+async function exportPdf(){
+  const y=String(ui.year),t=today();
+  const ev=db.events.filter(e=>isProbe(e)&&e.date.startsWith(y)).sort((a,b)=>a.date.localeCompare(b.date));
+  const pr=ev.filter(e=>!e.cancelled&&e.date<=t);
+  const {rows,top}=memberRows(pr);
+  if(!rows.length||!ev.length){alert('Für '+y+' gibt es noch keine Proben oder Mitglieder.');return}
+  const list=rows.map(r=>r).sort((a,b)=>byName(a.m,b.m));
+  const W=842,H=595,M=26;
+  const meas=document.createElement('canvas').getContext('2d');
+  const tw=(txt,sz,bold)=>{meas.font=(bold?'bold ':'')+sz+'px Helvetica, Arial, sans-serif';return meas.measureText(txt).width*1.04};
+  const fmtShort=d=>d.slice(8,10)+'.'+d.slice(5,7)+'.'+d.slice(2,4);
+  const placeTxt=r=>{if(!r.tot)return '-';const k=top.indexOf(r.p);return r.p+' %'+(k>=0?' (Platz '+(k+1)+')':'')};
+  const topH=40,hdrH=46,avail=H-2*M-topH-hdrH;
+  const minRow=8.2,maxRow=15;
+  const perPage=Math.max(1,Math.floor(avail/minRow));
+  const nPages=Math.ceil(list.length/perPage);
+  const rowH=Math.min(maxRow,avail/Math.ceil(list.length/nPages));
+  const fs=Math.min(9.5,rowH*0.66);
+  let nameW=0;list.forEach(r=>{nameW=Math.max(nameW,tw(dn(r.m),fs,false))});nameW+=8;
+  let antW=tw('100 % (Platz 3)',fs,false);list.forEach(r=>{antW=Math.max(antW,tw(placeTxt(r),fs,false))});antW+=8;
+  const n=ev.length,cw=Math.min(20,(W-2*M-nameW-antW)/n);
+  const x0=M,xa=x0+nameW,xr=xa+cw*n,xe=xr+antW;
+  const gray='0.82 g',lite='0.95 g';
+  const pages=[];
+  for(let p=0;p<nPages;p++){
+    const part=list.slice(p*Math.ceil(list.length/nPages),(p+1)*Math.ceil(list.length/nPages));
+    let c='';const top0=H-M;
+    const text=(x,yy,txt,sz,b,rot)=>{c+=`BT /F${b?2:1} ${sz} Tf ${rot?`0 1 -1 0 ${x} ${yy}`:`1 0 0 1 ${x} ${yy}`} Tm (${pdfStr(txt)}) Tj ET\n`};
+    const rect=(x,yy,w,h,col)=>{c+=`${col} ${x} ${yy} ${w} ${h} re f\n0 g\n`};
+    const line=(x1,y1,x2,y2,wd)=>{c+=`${wd||0.3} w ${x1} ${y1} m ${x2} ${y2} l S\n`};
+    text(M,top0-14,'Chor - Anwesenheit bei den Proben '+y,15,true);
+    text(M,top0-29,'+ besucht   0 nicht besucht / abgemeldet   / noch nicht oder nicht mehr im Chor   grau: entfallen   leer: noch nicht stattgefunden'+(nPages>1?'   Seite '+(p+1)+'/'+nPages:''),8,false);
+    const yh=top0-topH-hdrH,ys=top0-topH;
+    // Kopf
+    text(x0+3,yh+hdrH-fs-2,'Name',fs,true);
+    ev.forEach((e,i)=>{if(e.cancelled)rect(xa+i*cw,yh,cw,hdrH,gray);text(xa+i*cw+cw/2+Math.min(3.2,cw*0.3),yh+3,fmtShort(e.date),Math.min(7.5,cw*0.8),true,true)});
+    text(xr+3,yh+hdrH-fs-2,'Anteil',fs,true);
+    // Zeilen
+    part.forEach((r,k)=>{
+      const yy=yh-(k+1)*rowH;
+      if(k%2===1)rect(x0,yy,xe-x0,rowH,lite);
+      ev.forEach((e,i)=>{if(e.cancelled)rect(xa+i*cw,yy,cw,rowH,gray)});
+      text(x0+3,yy+rowH*0.3,dn(r.m),fs,false);
+      ev.forEach((e,i)=>{
+        if(e.cancelled||e.date>t)return;
+        const m=r.m;const sym=e.present.includes(m.id)?'+':inChoir(m,e.date)?'0':'/';
+        const w=tw(sym,fs,sym==='+');
+        text(xa+i*cw+(cw-w)/2,yy+rowH*0.3,sym,fs,sym==='+');
+      });
+      text(xr+3,yy+rowH*0.3,placeTxt(r),fs,top.indexOf(r.p)>=0&&r.tot>0);
+    });
+    const yb=yh-part.length*rowH;
+    // Linien
+    line(x0,yh,xe,yh,0.8);line(x0,yb,xe,yb,0.8);line(x0,ys,x0,yb,0.3);
+    line(xa,yh+hdrH,xa,yb);line(xr,yh+hdrH,xr,yb);line(xe,yh+hdrH,xe,yb);
+    for(let i=1;i<n;i++)line(xa+i*cw,yh+hdrH,xa+i*cw,yb,0.15);
+    for(let k=1;k<part.length;k++)line(x0,yh-k*rowH,xe,yh-k*rowH,0.1);
+    line(x0,yh+hdrH,xe,yh+hdrH,0.8);
+    pages.push(c);
+  }
+  const bytes=makePdf(pages,W,H);
+  const name='Chor-Anwesenheit-'+y+'.pdf';
+  const file=new File([bytes],name,{type:'application/pdf'});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});return}}catch(err){if(err&&err.name==='AbortError')return}
+  const url=URL.createObjectURL(file);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 
 /* ---------- Sicherung ---------- */
@@ -1110,6 +1204,7 @@ document.addEventListener('click',ev=>{
   else if(a==='delcond'){if(!confirm('Diesen Eintrag entfernen?'))return;db.settings.conductors.splice(+b.dataset.i,1);save()}
   else if(a==='clearcond'){const x=db.settings.conductors[+b.dataset.i];if(x){x.to='';save()}}
   else if(a==='export'){doExport();return}
+  else if(a==='exppdf'){exportPdf();return}
   render();
 });
 document.addEventListener('change',ev=>{
