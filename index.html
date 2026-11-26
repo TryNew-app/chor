@@ -956,7 +956,6 @@ async function exportPdf(){
     const rect=(x,yy,w,h,col)=>{c+=`${col} ${x} ${yy} ${w} ${h} re f\n0 g\n`};
     const line=(x1,y1,x2,y2,wd)=>{c+=`${wd||0.3} w ${x1} ${y1} m ${x2} ${y2} l S\n`};
     text(M,top0-14,((db.settings.name||'').trim()||'Chor')+' - Anwesenheit in Proben '+y,15,true);
-    text(M,top0-29,'+ besucht   0 nicht besucht / abgemeldet   / noch nicht oder nicht mehr im Chor   grau: entfallen   leer: noch nicht stattgefunden   (1) (2) (3): Platz im Anteil'+(nPages>1?'   Seite '+(p+1)+'/'+nPages:''),8,false);
     const yh=top0-topH-hdrH,ys=top0-topH;
     // Kopf
     text(x0+3,yh+hdrH-fs-2,'Nr.',fs,true);text(xn+3,yh+hdrH-fs-2,'Name',fs,true);
