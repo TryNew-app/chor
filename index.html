@@ -936,18 +936,18 @@ async function exportPdf(){
   const meas=document.createElement('canvas').getContext('2d');
   const tw=(txt,sz,bold)=>{meas.font=(bold?'bold ':'')+sz+'px Helvetica, Arial, sans-serif';return meas.measureText(txt).width*1.04};
   const fmtShort=d=>d.slice(8,10)+'.'+d.slice(5,7)+'.'+d.slice(2,4);
-  const placeTxt=r=>{if(!r.tot)return '-';const k=top.indexOf(r.p);return r.p+' %'+(k>=0?' (Platz '+(k+1)+')':'')};
+  const placeTxt=r=>{if(!r.tot)return '-';const k=top.indexOf(r.p);return r.p+' %'+(k>=0?' ('+(k+1)+')':'')};
   const topH=40,hdrH=46,avail=H-2*M-topH-hdrH;
   const minRow=8.2,maxRow=15;
   const perPage=Math.max(1,Math.floor(avail/minRow));
   const nPages=Math.ceil(list.length/perPage);
   const rowH=Math.min(maxRow,avail/Math.ceil(list.length/nPages));
   const fs=Math.min(9.5,rowH*0.66);
-  let nameW=0;list.forEach(r=>{nameW=Math.max(nameW,tw(dn(r.m),fs,false))});nameW+=8;
-  let antW=tw('100 % (Platz 3)',fs,false);list.forEach(r=>{antW=Math.max(antW,tw(placeTxt(r),fs,false))});antW+=8;
+  let nameW=0;list.forEach(r=>{nameW=Math.max(nameW,tw(dn(r.m),fs,false))});nameW+=8;const nrW=tw(String(list.length),fs,false)+8;
+  let antW=tw('100 % (3)',fs,false);list.forEach(r=>{antW=Math.max(antW,tw(placeTxt(r),fs,false))});antW+=8;
   const n=ev.length,cw=Math.min(20,(W-2*M-nameW-antW)/n);
-  const x0=M,xa=x0+nameW,xr=xa+cw*n,xe=xr+antW;
-  const gray='0.82 g',lite='0.95 g';
+  const x0=M,xn=x0+nrW,xa=xn+nameW,xr=xa+cw*n,xe=xr+antW;
+  const gray='0.78 g',lite='0.91 g';
   const pages=[];
   for(let p=0;p<nPages;p++){
     const part=list.slice(p*Math.ceil(list.length/nPages),(p+1)*Math.ceil(list.length/nPages));
@@ -955,19 +955,19 @@ async function exportPdf(){
     const text=(x,yy,txt,sz,b,rot)=>{c+=`BT /F${b?2:1} ${sz} Tf ${rot?`0 1 -1 0 ${x} ${yy}`:`1 0 0 1 ${x} ${yy}`} Tm (${pdfStr(txt)}) Tj ET\n`};
     const rect=(x,yy,w,h,col)=>{c+=`${col} ${x} ${yy} ${w} ${h} re f\n0 g\n`};
     const line=(x1,y1,x2,y2,wd)=>{c+=`${wd||0.3} w ${x1} ${y1} m ${x2} ${y2} l S\n`};
-    text(M,top0-14,'Chor - Anwesenheit bei den Proben '+y,15,true);
-    text(M,top0-29,'+ besucht   0 nicht besucht / abgemeldet   / noch nicht oder nicht mehr im Chor   grau: entfallen   leer: noch nicht stattgefunden'+(nPages>1?'   Seite '+(p+1)+'/'+nPages:''),8,false);
+    text(M,top0-14,((db.settings.name||'').trim()||'Chor')+' - Anwesenheit in Proben '+y,15,true);
+    text(M,top0-29,'+ besucht   0 nicht besucht / abgemeldet   / noch nicht oder nicht mehr im Chor   grau: entfallen   leer: noch nicht stattgefunden   (1) (2) (3): Platz im Anteil'+(nPages>1?'   Seite '+(p+1)+'/'+nPages:''),8,false);
     const yh=top0-topH-hdrH,ys=top0-topH;
     // Kopf
-    text(x0+3,yh+hdrH-fs-2,'Name',fs,true);
+    text(x0+3,yh+hdrH-fs-2,'Nr.',fs,true);text(xn+3,yh+hdrH-fs-2,'Name',fs,true);
     ev.forEach((e,i)=>{if(e.cancelled)rect(xa+i*cw,yh,cw,hdrH,gray);text(xa+i*cw+cw/2+Math.min(3.2,cw*0.3),yh+3,fmtShort(e.date),Math.min(7.5,cw*0.8),true,true)});
     text(xr+3,yh+hdrH-fs-2,'Anteil',fs,true);
     // Zeilen
     part.forEach((r,k)=>{
       const yy=yh-(k+1)*rowH;
-      if(k%2===1)rect(x0,yy,xe-x0,rowH,lite);
+      if(k%2===0)rect(x0,yy,xe-x0,rowH,lite);
       ev.forEach((e,i)=>{if(e.cancelled)rect(xa+i*cw,yy,cw,rowH,gray)});
-      text(x0+3,yy+rowH*0.3,dn(r.m),fs,false);
+      const nr=String(p*Math.ceil(list.length/nPages)+k+1);text(xn-3-tw(nr,fs,false),yy+rowH*0.3,nr,fs,false);text(xn+3,yy+rowH*0.3,dn(r.m),fs,false);
       ev.forEach((e,i)=>{
         if(e.cancelled||e.date>t)return;
         const m=r.m;const sym=e.present.includes(m.id)?'+':inChoir(m,e.date)?'0':'/';
@@ -979,7 +979,7 @@ async function exportPdf(){
     const yb=yh-part.length*rowH;
     // Linien
     line(x0,yh,xe,yh,0.8);line(x0,yb,xe,yb,0.8);line(x0,ys,x0,yb,0.3);
-    line(xa,yh+hdrH,xa,yb);line(xr,yh+hdrH,xr,yb);line(xe,yh+hdrH,xe,yb);
+    line(xn,yh+hdrH,xn,yb);line(xa,yh+hdrH,xa,yb);line(xr,yh+hdrH,xr,yb);line(xe,yh+hdrH,xe,yb);
     for(let i=1;i<n;i++)line(xa+i*cw,yh+hdrH,xa+i*cw,yb,0.15);
     for(let k=1;k<part.length;k++)line(x0,yh-k*rowH,xe,yh-k*rowH,0.1);
     line(x0,yh+hdrH,xe,yh+hdrH,0.8);
