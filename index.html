@@ -928,62 +928,84 @@ const pdfStr=t=>String(t).replace(/[–—]/g,'-').replace(/[^\x20-\x7e\xa0-\xff
 async function exportPdf(){
   const y=String(ui.year),t=today();
   const ev=db.events.filter(e=>isProbe(e)&&e.date.startsWith(y)).sort((a,b)=>a.date.localeCompare(b.date));
+  const gl=db.gigs.filter(g=>g.date.startsWith(y)).sort((a,b)=>a.date.localeCompare(b.date));
   const pr=ev.filter(e=>!e.cancelled&&e.date<=t);
-  const {rows,top}=memberRows(pr);
+  const {rows}=memberRows(pr);
   if(!rows.length||!ev.length){alert('Für '+y+' gibt es noch keine Proben oder Mitglieder.');return}
-  const list=rows.map(r=>r).sort((a,b)=>byName(a.m,b.m));
+  const list=rows.map(r=>r.m).sort(byName);
   const W=842,H=595,M=26;
   const meas=document.createElement('canvas').getContext('2d');
   const tw=(txt,sz,bold)=>{meas.font=(bold?'bold ':'')+sz+'px Helvetica, Arial, sans-serif';return meas.measureText(txt).width*1.04};
   const fmtShort=d=>d.slice(8,10)+'.'+d.slice(5,7)+'.'+d.slice(2,4);
-  const placeTxt=r=>{if(!r.tot)return '-';const k=top.indexOf(r.p);return r.p+' %'+(k>=0?' ('+(k+1)+')':'')};
-  const topH=40,hdrH=46,avail=H-2*M-topH-hdrH;
-  const minRow=8.2,maxRow=15;
-  const perPage=Math.max(1,Math.floor(avail/minRow));
-  const nPages=Math.ceil(list.length/perPage);
-  const rowH=Math.min(maxRow,avail/Math.ceil(list.length/nPages));
-  const fs=Math.min(9.5,rowH*0.66);
-  let nameW=0;list.forEach(r=>{nameW=Math.max(nameW,tw(dn(r.m),fs,false))});nameW+=8;const nrW=tw(String(list.length),fs,false)+8;
-  let antW=tw('100 % (3)',fs,false);list.forEach(r=>{antW=Math.max(antW,tw(placeTxt(r),fs,false))});antW+=8;
-  const n=ev.length,cw=Math.min(20,(W-2*M-nameW-antW)/n);
-  const x0=M,xn=x0+nrW,xa=xn+nameW,xr=xa+cw*n,xe=xr+antW;
-  const gray='0.78 g',lite='0.91 g';
+  const chor=((db.settings.name||'').trim()||'Chor');
   const pages=[];
-  for(let p=0;p<nPages;p++){
-    const part=list.slice(p*Math.ceil(list.length/nPages),(p+1)*Math.ceil(list.length/nPages));
-    let c='';const top0=H-M;
-    const text=(x,yy,txt,sz,b,rot)=>{c+=`BT /F${b?2:1} ${sz} Tf ${rot?`0 1 -1 0 ${x} ${yy}`:`1 0 0 1 ${x} ${yy}`} Tm (${pdfStr(txt)}) Tj ET\n`};
-    const rect=(x,yy,w,h,col)=>{c+=`${col} ${x} ${yy} ${w} ${h} re f\n0 g\n`};
-    const line=(x1,y1,x2,y2,wd)=>{c+=`${wd||0.3} w ${x1} ${y1} m ${x2} ${y2} l S\n`};
-    text(M,top0-14,((db.settings.name||'').trim()||'Chor')+' - Anwesenheit in Proben '+y,15,true);
-    const yh=top0-topH-hdrH,ys=top0-topH;
-    // Kopf
-    text(x0+3,yh+hdrH-fs-2,'Nr.',fs,true);text(xn+3,yh+hdrH-fs-2,'Name',fs,true);
-    ev.forEach((e,i)=>{if(e.cancelled)rect(xa+i*cw,yh,cw,hdrH,gray);text(xa+i*cw+cw/2+Math.min(3.2,cw*0.3),yh+3,fmtShort(e.date),Math.min(7.5,cw*0.8),true,true)});
-    text(xr+3,yh+hdrH-fs-2,'Anteil',fs,true);
-    // Zeilen
-    part.forEach((r,k)=>{
-      const yy=yh-(k+1)*rowH;
-      if(k%2===0)rect(x0,yy,xe-x0,rowH,lite);
-      ev.forEach((e,i)=>{if(e.cancelled)rect(xa+i*cw,yy,cw,rowH,gray)});
-      const nr=String(p*Math.ceil(list.length/nPages)+k+1);text(xn-3-tw(nr,fs,false),yy+rowH*0.3,nr,fs,false);text(xn+3,yy+rowH*0.3,dn(r.m),fs,false);
-      ev.forEach((e,i)=>{
-        if(e.cancelled||e.date>t)return;
-        const m=r.m;const sym=e.present.includes(m.id)?'+':inChoir(m,e.date)?'0':'/';
-        const w=tw(sym,fs,sym==='+');
-        text(xa+i*cw+(cw-w)/2,yy+rowH*0.3,sym,fs,sym==='+');
-      });
-      text(xr+3,yy+rowH*0.3,placeTxt(r),fs,top.indexOf(r.p)>=0&&r.tot>0);
+  // cols: {date, label?, gray, held, sym(m)}; Anteil = besuchte / stattgefundene (wie in der Statistik)
+  function table(title,cols,twoLine){
+    const rs=list.map(m=>{
+      const held=cols.filter(c=>c.held&&!c.gray);
+      const n=held.filter(c=>c.sym(m)==='+').length,tot=held.filter(c=>c.sym(m)!=='/').length;
+      return{m,n,tot,p:tot?Math.round(n/tot*100):-1};
     });
-    const yb=yh-part.length*rowH;
-    // Linien
-    line(x0,yh,xe,yh,0.8);line(x0,yb,xe,yb,0.8);line(x0,ys,x0,yb,0.3);
-    line(xn,yh+hdrH,xn,yb);line(xa,yh+hdrH,xa,yb);line(xr,yh+hdrH,xr,yb);line(xe,yh+hdrH,xe,yb);
-    for(let i=1;i<n;i++)line(xa+i*cw,yh+hdrH,xa+i*cw,yb,0.15);
-    for(let k=1;k<part.length;k++)line(x0,yh-k*rowH,xe,yh-k*rowH,0.1);
-    line(x0,yh+hdrH,xe,yh+hdrH,0.8);
-    pages.push(c);
+    const top=[...new Set(rs.filter(r=>r.p>0).map(r=>r.p))].sort((a,b)=>b-a).slice(0,3);
+    const placeTxt=r=>{if(!r.tot)return '-';const k=top.indexOf(r.p);return r.p+' %'+(k>=0?' ('+(k+1)+')':'')};
+    const lsz=7;
+    let hdrH=46;
+    if(twoLine){const L=Math.max(...cols.map(c=>tw(c.label,lsz,false)));hdrH=Math.min(140,Math.max(46,L+8))}
+    const topH=26,avail=H-2*M-topH-hdrH;
+    const minRow=8.2,maxRow=15;
+    const perPage=Math.max(1,Math.floor(avail/minRow));
+    const nPages=Math.ceil(rs.length/perPage),per=Math.ceil(rs.length/nPages);
+    const rowH=Math.min(maxRow,avail/per);
+    const fs=Math.min(9.5,rowH*0.66);
+    let nameW=0;rs.forEach(r=>{nameW=Math.max(nameW,tw(dn(r.m),fs,false))});nameW+=8;
+    const nrW=tw(String(rs.length),fs,false)+8;
+    let antW=tw('100 % (3)',fs,false);rs.forEach(r=>{antW=Math.max(antW,tw(placeTxt(r),fs,false))});antW+=8;
+    const n=cols.length,cw=Math.min(twoLine?26:20,(W-2*M-nrW-nameW-antW)/n);
+    const x0=M,xn=x0+nrW,xa=xn+nameW,xr=xa+cw*n,xe=xr+antW;
+    const gray='0.78 g',lite='0.91 g';
+    for(let p=0;p<nPages;p++){
+      const part=rs.slice(p*per,(p+1)*per);
+      let c='';const top0=H-M;
+      const text=(x,yy,txt,sz,b,rot)=>{c+=`BT /F${b?2:1} ${sz} Tf ${rot?`0 1 -1 0 ${x} ${yy}`:`1 0 0 1 ${x} ${yy}`} Tm (${pdfStr(txt)}) Tj ET\n`};
+      const rect=(x,yy,w,h,col)=>{c+=`${col} ${x} ${yy} ${w} ${h} re f\n0 g\n`};
+      const line=(x1,y1,x2,y2,wd)=>{c+=`${wd||0.3} w ${x1} ${y1} m ${x2} ${y2} l S\n`};
+      text(M,top0-14,title+(nPages>1?' ('+(p+1)+'/'+nPages+')':''),15,true);
+      const yh=top0-topH-hdrH,ys=top0-topH;
+      text(x0+3,yh+hdrH-fs-2,'Nr.',fs,true);text(xn+3,yh+hdrH-fs-2,'Name',fs,true);
+      cols.forEach((e,i)=>{
+        if(e.gray)rect(xa+i*cw,yh,cw,hdrH,gray);
+        if(twoLine){
+          text(xa+i*cw+cw*0.38,yh+3,fmtShort(e.date),Math.min(7.5,cw*0.3),true,true);
+          let ls=lsz;const maxL=hdrH-8;if(tw(e.label,ls,false)>maxL)ls=Math.max(4,ls*maxL/tw(e.label,ls,false));
+          text(xa+i*cw+cw*0.78,yh+3,e.label,ls,false,true);
+        }else text(xa+i*cw+cw/2+Math.min(3.2,cw*0.3),yh+3,fmtShort(e.date),Math.min(7.5,cw*0.8),true,true);
+      });
+      text(xr+3,yh+hdrH-fs-2,'Anteil',fs,true);
+      part.forEach((r,k)=>{
+        const yy=yh-(k+1)*rowH,idx=p*per+k+1;
+        if(k%2===0)rect(x0,yy,xe-x0,rowH,lite);
+        cols.forEach((e,i)=>{if(e.gray)rect(xa+i*cw,yy,cw,rowH,gray)});
+        const nr=String(idx);text(xn-3-tw(nr,fs,false),yy+rowH*0.3,nr,fs,false);text(xn+3,yy+rowH*0.3,dn(r.m),fs,false);
+        cols.forEach((e,i)=>{
+          if(e.gray||!e.held)return;
+          const sym=e.sym(r.m),w=tw(sym,fs,sym==='+');
+          text(xa+i*cw+(cw-w)/2,yy+rowH*0.3,sym,fs,sym==='+');
+        });
+        text(xr+3,yy+rowH*0.3,placeTxt(r),fs,top.indexOf(r.p)>=0&&r.tot>0);
+      });
+      const yb=yh-part.length*rowH;
+      line(x0,yh,xe,yh,0.8);line(x0,yb,xe,yb,0.8);line(x0,ys,x0,yb,0.3);
+      line(xn,yh+hdrH,xn,yb);line(xa,yh+hdrH,xa,yb);line(xr,yh+hdrH,xr,yb);line(xe,yh+hdrH,xe,yb);
+      for(let i=1;i<n;i++)line(xa+i*cw,yh+hdrH,xa+i*cw,yb,0.15);
+      for(let k=1;k<part.length;k++)line(x0,yh-k*rowH,xe,yh-k*rowH,0.1);
+      line(x0,yh+hdrH,xe,yh+hdrH,0.8);
+      pages.push(c);
+    }
   }
+  table(chor+' - Anwesenheit in Proben '+y,ev.map(e=>({date:e.date,gray:e.cancelled,held:e.date<=t,
+    sym:m=>e.present.includes(m.id)?'+':inChoir(m,e.date)?'0':'/'})),false);
+  if(gl.length)table(chor+' - Anwesenheit bei Auftritten '+y,gl.map(g=>({date:g.date,label:gigTitle(g),gray:false,held:g.date<=t,
+    sym:m=>g.present.includes(m.id)?'+':((m.active!==false&&inChoir(m,g.date))||marks(g).includes(m.id))?'0':'/'})),true);
   const bytes=makePdf(pages,W,H);
   const name='Chor-Anwesenheit-'+y+'.pdf';
   const file=new File([bytes],name,{type:'application/pdf'});
